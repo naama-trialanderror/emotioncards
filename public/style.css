@@ -1145,3 +1145,200 @@ input, textarea { font-family: var(--font); direction: rtl; }
   .table-surface    { padding: 20px 10px 16px; }
   .action-area      { padding: 14px 14px 24px; }
 }
+
+/* ── Landing: mode separator ── */
+.landing-mode-sep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.landing-mode-sep::before,
+.landing-mode-sep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ══════════════════════════════════════════════════════
+   FREE PLAY SCREEN
+   ══════════════════════════════════════════════════════ */
+
+#screen-free-play {
+  justify-content: flex-start;
+  background: var(--bg-warm);
+}
+
+/* ── Header ── */
+.fp-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: 58px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.fp-player-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 90px;
+}
+.fp-player-right { align-items: flex-end; }
+
+.fp-player-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.fp-player-hand {
+  font-size: 12px;
+  color: var(--text-mid);
+}
+
+.fp-deck-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--r);
+  padding: 6px 16px;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: var(--shadow-sm);
+}
+.fp-deck-badge small {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: .85;
+}
+
+/* ── Section labels ── */
+.fp-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 10px;
+}
+
+.fp-empty-hint {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 12px 0;
+  font-weight: 300;
+  font-style: italic;
+}
+
+/* ── Table section ── */
+.fp-table-section {
+  width: 100%;
+  padding: 16px 16px 12px;
+  background: var(--bg-warm);
+  flex-shrink: 0;
+}
+
+.fp-table-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  min-height: 10px;
+}
+
+/* ── Controls ── */
+.fp-controls {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* ── Hand section ── */
+.fp-hand-section {
+  flex: 1;
+  width: 100%;
+  padding: 16px 16px 8px;
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+.fp-hand-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* ── Cards ── */
+.fp-card {
+  position: relative;
+  width: clamp(120px, 32vw, 180px);
+  aspect-ratio: 3 / 2;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: #f2ede6;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--t-lg) var(--ease), box-shadow var(--t-lg) var(--ease);
+  flex-shrink: 0;
+}
+.fp-card:hover { transform: scale(1.04); box-shadow: var(--shadow-lg); }
+
+.fp-card img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+}
+
+.fp-card-btn {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(24,19,14,.62);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 0;
+  text-align: center;
+  font-family: var(--font);
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--t), background var(--t);
+  letter-spacing: .02em;
+}
+.fp-card:hover .fp-card-btn { opacity: 1; }
+.fp-card-btn:hover { background: rgba(200,98,74,.85); }
+.fp-card-btn--disabled { opacity: .4 !important; cursor: default; }
+.fp-card-btn--disabled:hover { background: rgba(24,19,14,.62); }
+
+/* ── End area ── */
+.fp-end-area {
+  width: 100%;
+  padding: 14px 20px 20px;
+  display: flex;
+  justify-content: center;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}

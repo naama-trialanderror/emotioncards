@@ -388,7 +388,11 @@ document.getElementById('btn-start').addEventListener('click', async () => {
   const snap = await get(ref(db, `rooms/${roomCode}`));
   const room = snap.val();
   if (!room.childConnected) return showError('ממתינים לשחקן השני.');
-  writeNewRound(room, 'therapist', 1);
+  if (room.gameMode === 'free-play') {
+    writeNewFreePlayGame();
+  } else {
+    writeNewRound(room, 'therapist', 1);
+  }
 });
 
 // ══════════════════════════════════════════════════════
@@ -470,6 +474,7 @@ function render(room) {
   const isActive = myRole === room.activePlayer;
   if (room.phase === 'lobby') { renderLobby(room); return; }
   if (room.phase === 'choosing-prompt') { renderChoosePrompt(room, isActive); return; }
+  if (room.phase === 'free-play') { renderFreePlay(room); return; }
   showScreen('screen-game');
   renderHeader(room);
   renderPhase(room, isActive);
@@ -861,3 +866,208 @@ async function nextRound() {
 
 document.getElementById('btn-next-round').addEventListener('click', nextRound);
 document.getElementById('btn-next-round-top').addEventListener('click', nextRound);
+
+// ══════════════════════════════════════════════════════
+// FREE PLAY MODE
+// ══════════════════════════════════════════════════════
+
+// ── Helpers ───────────────────────────────────────────
+
+function toTableCards(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.map(Number).filter(Boolean);
+  return Object.values(val).map(Number).filter(Boolean);
+}
+
+function toHandCards(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.map(Number).filter(Boolean);
+  return Object.values(val).map(Number).filter(Boolean);
+}
+
+// ── Create free-play room ─────────────────────────────
+
+document.getElementById('btn-go-free-play').addEventListener('click', async () => {
+  const name = document.getElementById('therapist-name').value.trim();
+  if (!name) return showError('נא להזין שם');
+
+  const code = generateCode();
+  roomCode = code;
+  myRole   = 'therapist';
+
+  try {
+    await set(ref(db, `rooms/${code}`), {
+      therapistName:  name,
+      childName:      null,
+      childConnected: false,
+      phase:          'lobby',
+      gameMode:       'free-play',
+      createdAt:      Date.now(),
+    });
+  } catch (e) {
+    return showError('שגיאה בחיבור ל-Firebase: ' + e.message);
+  }
+
+  document.getElementById('display-code').textContent = code;
+  showScreen('screen-lobby');
+  document.getElementById('therapist-lobby-controls').classList.remove('hidden');
+  listenToRoom(code);
+});
+
+// ── Start free-play ───────────────────────────────────
+
+async function writeNewFreePlayGame() {
+  const all  = Array.from({ length: TOTAL_CARDS }, (_, i) => i + 1);
+  const deck = shuffle(all);
+  await update(ref(db, `rooms/${roomCode}`), {
+    phase:              'free-play',
+    deck,
+    tableCards:         [],
+    therapistHand:      [],
+    childHand:          [],
+    therapistHandCount: 0,
+    childHandCount:     0,
+  });
+}
+
+// ── Render ────────────────────────────────────────────
+
+function renderFreePlay(room) {
+  showScreen('screen-free-play');
+
+  // Header
+  document.getElementById('fp-name-therapist').textContent  = room.therapistName || 'מטפל/ת';
+  document.getElementById('fp-name-child').textContent      = room.childName     || 'ילד/ה';
+  document.getElementById('fp-count-therapist').textContent = room.therapistHandCount || 0;
+  document.getElementById('fp-count-child').textContent     = room.childHandCount     || 0;
+
+  // Deck
+  const deck = toHandCards(room.deck);
+  document.getElementById('fp-deck-num').textContent = deck.length;
+  document.getElementById('btn-fp-flip').disabled = deck.length === 0;
+  document.getElementById('btn-fp-deal').disabled = deck.length < 6;
+
+  // Table
+  const tableCards = toTableCards(room.tableCards);
+  document.getElementById('fp-table-count').textContent = `(${tableCards.length}/4)`;
+  document.getElementById('fp-table-empty').style.display = tableCards.length ? 'none' : '';
+
+  const tableEl = document.getElementById('fp-table-cards');
+  tableEl.innerHTML = '';
+  tableCards.forEach(cardId => {
+    const el = fpBuildCard(cardId, 'אסוף לידיים שלי', () => fpTakeFromTable(cardId));
+    tableEl.appendChild(el);
+  });
+
+  // My hand (private)
+  const myHandKey = myRole === 'therapist' ? 'therapistHand' : 'childHand';
+  const myHand = toHandCards(room[myHandKey]);
+  const tableIsFull = tableCards.length >= 4;
+
+  document.getElementById('fp-hand-count').textContent = myHand.length ? `(${myHand.length})` : '';
+  document.getElementById('fp-hand-empty').style.display = myHand.length ? 'none' : '';
+
+  const handEl = document.getElementById('fp-hand-cards');
+  handEl.innerHTML = '';
+  myHand.forEach(cardId => {
+    const btnText = tableIsFull ? 'שולחן מלא' : 'הנח על השולחן';
+    const onClick = tableIsFull ? null : () => fpPlaceOnTable(cardId);
+    const el = fpBuildCard(cardId, btnText, onClick);
+    if (tableIsFull) el.querySelector('.fp-card-btn').classList.add('fp-card-btn--disabled');
+    handEl.appendChild(el);
+  });
+
+  // End button — therapist only
+  document.getElementById('fp-end-area').style.display = myRole === 'therapist' ? '' : 'none';
+}
+
+function fpBuildCard(cardId, btnText, onClick) {
+  const div = document.createElement('div');
+  div.className = 'fp-card';
+
+  const img = document.createElement('img');
+  img.src = `/cards/card_${String(cardId).padStart(2, '0')}.png`;
+  img.alt = `קלף ${cardId}`;
+  img.onerror = () => img.remove();
+  div.appendChild(img);
+
+  const btn = document.createElement('button');
+  btn.className = 'fp-card-btn';
+  btn.textContent = btnText;
+  if (onClick) btn.addEventListener('click', e => { e.stopPropagation(); onClick(); });
+  div.appendChild(btn);
+
+  return div;
+}
+
+// ── Actions ───────────────────────────────────────────
+
+async function fpFlipCard() {
+  const room = currentRoom;
+  const deck       = toHandCards(room.deck);
+  const tableCards = toTableCards(room.tableCards);
+  if (!deck.length || tableCards.length >= 4) return;
+
+  const [cardId, ...remaining] = deck;
+  await update(ref(db, `rooms/${roomCode}`), {
+    deck:       remaining,
+    tableCards: [...tableCards, cardId],
+  });
+}
+
+async function fpDeal() {
+  const room = currentRoom;
+  const deck = toHandCards(room.deck);
+  if (deck.length < 6) return;
+
+  const tCards = deck.slice(0, 3);
+  const cCards = deck.slice(3, 6);
+  const remaining = deck.slice(6);
+
+  const therapistHand = [...toHandCards(room.therapistHand), ...tCards];
+  const childHand     = [...toHandCards(room.childHand), ...cCards];
+
+  await update(ref(db, `rooms/${roomCode}`), {
+    deck:               remaining,
+    therapistHand,
+    childHand,
+    therapistHandCount: therapistHand.length,
+    childHandCount:     childHand.length,
+  });
+}
+
+async function fpTakeFromTable(cardId) {
+  const room = currentRoom;
+  const tableCards = toTableCards(room.tableCards);
+  const myHandKey  = myRole === 'therapist' ? 'therapistHand' : 'childHand';
+  const myCountKey = myRole === 'therapist' ? 'therapistHandCount' : 'childHandCount';
+  const myHand     = toHandCards(room[myHandKey]);
+
+  await update(ref(db, `rooms/${roomCode}`), {
+    tableCards:      tableCards.filter(id => id !== cardId),
+    [myHandKey]:     [...myHand, cardId],
+    [myCountKey]:    myHand.length + 1,
+  });
+}
+
+async function fpPlaceOnTable(cardId) {
+  const room = currentRoom;
+  const tableCards = toTableCards(room.tableCards);
+  if (tableCards.length >= 4) return;
+
+  const myHandKey  = myRole === 'therapist' ? 'therapistHand' : 'childHand';
+  const myCountKey = myRole === 'therapist' ? 'therapistHandCount' : 'childHandCount';
+  const myHand     = toHandCards(room[myHandKey]);
+
+  await update(ref(db, `rooms/${roomCode}`), {
+    tableCards:   [...tableCards, cardId],
+    [myHandKey]:  myHand.filter(id => id !== cardId),
+    [myCountKey]: myHand.length - 1,
+  });
+}
+
+// ── Event listeners ───────────────────────────────────
+
+document.getElementById('btn-fp-flip').addEventListener('click', fpFlipCard);
+document.getElementById('btn-fp-deal').addEventListener('click', fpDeal);
+document.getElementById('btn-fp-end').addEventListener('click', () => location.reload());

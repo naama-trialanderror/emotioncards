@@ -35,6 +35,8 @@
           autocomplete="off"
         >
         <button id="btn-go-settings" class="btn btn-primary">הגדרות ויצירה ◀</button>
+        <div class="landing-mode-sep"><span>או</span></div>
+        <button id="btn-go-free-play" class="btn btn-secondary">חפיסת קלפים ◀</button>
       </div>
 
       <div class="landing-divider">או</div>
@@ -285,6 +287,54 @@
         <span>יצרה ב❤️ נעמה נווה — בינה מלאכותית למטפלים</span>
       </a>
     </footer>
+  </div>
+
+  <!-- ══════════════════════════════ FREE PLAY ══════════════════════════════ -->
+  <div id="screen-free-play" class="screen">
+
+    <header class="fp-header">
+      <div class="fp-player-block">
+        <span class="fp-player-name" id="fp-name-therapist">מטפל/ת</span>
+        <span class="fp-player-hand">🃏 <span id="fp-count-therapist">0</span></span>
+      </div>
+      <div class="fp-deck-badge">
+        <span id="fp-deck-num">52</span>
+        <small>בערימה</small>
+      </div>
+      <div class="fp-player-block fp-player-right">
+        <span class="fp-player-name" id="fp-name-child">ילד/ה</span>
+        <span class="fp-player-hand">🃏 <span id="fp-count-child">0</span></span>
+      </div>
+    </header>
+
+    <div class="fp-table-section">
+      <p class="fp-section-label">שולחן משותף <span id="fp-table-count"></span></p>
+      <div class="fp-table-cards" id="fp-table-cards"></div>
+      <p class="fp-empty-hint" id="fp-table-empty">הפוך קלף מהערימה כדי להתחיל</p>
+    </div>
+
+    <div class="fp-controls">
+      <button id="btn-fp-flip" class="btn btn-primary btn-small">הפוך קלף</button>
+      <button id="btn-fp-deal" class="btn btn-secondary btn-small">חלק 3 לכל אחד</button>
+    </div>
+
+    <div class="fp-hand-section">
+      <p class="fp-section-label">הקלפים שלי <span id="fp-hand-count"></span></p>
+      <div class="fp-hand-cards" id="fp-hand-cards"></div>
+      <p class="fp-empty-hint" id="fp-hand-empty">אין קלפים בידיים שלך עדיין</p>
+    </div>
+
+    <div class="fp-end-area" id="fp-end-area">
+      <button id="btn-fp-end" class="btn btn-ghost btn-small">סיום שיחה ✕</button>
+    </div>
+
+    <div id="fp-disconnect-overlay" class="overlay hidden">
+      <div class="overlay-box">
+        <p class="overlay-emoji">😔</p>
+        <p>השחקן התנתק</p>
+        <button onclick="location.reload()" class="btn btn-primary">חזור לדף הבית</button>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="game.js"></script>
