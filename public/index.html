@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>קלפים מדברים</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════ LANDING ═══════════════════════════════════ -->
+  <div id="screen-landing" class="screen active">
+    <div class="landing-hero">
+      <div class="landing-title-wrap">
+        <h1 class="landing-title">קלפים מדברים</h1>
+      </div>
+    </div>
+
+    <div class="landing-options">
+      <!-- Therapist -->
+      <div class="landing-card">
+        <h2>מטפל/ת</h2>
+        <p class="landing-card-desc">צור משחק חדש וקבל קוד לשיתוף</p>
+        <input
+          type="text"
+          id="therapist-name"
+          class="input"
+          placeholder="השם שלך"
+          maxlength="20"
+          autocomplete="off"
+        >
+        <button id="btn-go-settings" class="btn btn-primary">הגדרות ויצירה ◀</button>
+      </div>
+
+      <div class="landing-divider">או</div>
+
+      <!-- Child -->
+      <div class="landing-card">
+        <h2>ילד/ה</h2>
+        <p class="landing-card-desc">הצטרף למשחק עם קוד שקיבלת</p>
+        <input
+          type="text"
+          id="child-name"
+          class="input"
+          placeholder="השם שלך"
+          maxlength="20"
+          autocomplete="off"
+        >
+        <input
+          type="text"
+          id="room-code-input"
+          class="input input-code"
+          placeholder="קוד חדר"
+          maxlength="5"
+          autocomplete="off"
+        >
+        <button id="btn-join" class="btn btn-secondary">הצטרף</button>
+      </div>
+    </div>
+
+    <div id="landing-error" class="error-toast hidden"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════ LOBBY ════════════════════════════════════ -->
+  <div id="screen-lobby" class="screen">
+    <div class="lobby-wrap">
+<div id="lobby-code-section">
+        <p class="lobby-label">שתף את הקוד הזה עם השחקן השני:</p>
+        <div class="lobby-code-box">
+          <span id="display-code" class="lobby-code">-----</span>
+          <button id="btn-copy-code" class="btn btn-small" title="העתק">📋</button>
+        </div>
+      </div>
+
+      <div class="lobby-status-wrap">
+        <div id="lobby-spinner" class="spinner"></div>
+        <p id="lobby-status-text">ממתין לשחקן השני...</p>
+      </div>
+
+      <div id="therapist-lobby-controls" class="hidden">
+        <button id="btn-start" class="btn btn-primary btn-lg hidden">התחל משחק ▶</button>
+      </div>
+
+      <div id="child-lobby-msg" class="hidden lobby-child-wait">
+        <p>מחכים למטפל/ת להתחיל...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ GAME ════════════════════════════════════ -->
+  <div id="screen-game" class="screen">
+
+    <!-- Header: scores -->
+    <header class="game-header">
+      <div class="score-block" id="score-block-therapist">
+        <span class="score-name" id="name-therapist">מטפל/ת</span>
+        <span class="score-value" id="score-therapist">0</span>
+      </div>
+      <div class="round-badge" id="round-badge">סיבוב 1</div>
+      <button id="btn-mid-settings" class="btn-mid-settings hidden">הגדרות</button>
+      <div class="score-block" id="score-block-child">
+        <span class="score-name" id="name-child">ילד/ה</span>
+        <span class="score-value" id="score-child">0</span>
+      </div>
+    </header>
+
+    <!-- Phase banner -->
+    <div class="phase-banner" id="phase-banner">
+      <span id="phase-text">...</span>
+      <button id="btn-next-round-top" class="btn btn-primary btn-small hidden">סיבוב הבא →</button>
+    </div>
+
+    <!-- Prompt area -->
+    <div class="prompt-area" id="prompt-area">
+      <div id="cards-only-input-area" class="hidden">
+        <input type="text" id="cards-only-text" class="input cards-only-text-input"
+          placeholder="הקלד/י משפט שיופיע לשחקן השני (אופציונלי)..." maxlength="120" autocomplete="off">
+      </div>
+      <div class="prompt-bubble" id="prompt-bubble">
+        <p id="prompt-text" class="prompt-text">...</p>
+        <div class="prompt-actions">
+          <button id="btn-reroll-prompt" class="btn btn-ghost btn-small hidden">הגרל אחר</button>
+          <button id="btn-edit-prompt" class="btn-icon hidden" title="ערוך פרומפט">✏️</button>
+        </div>
+      </div>
+      <div id="edit-prompt-area" class="edit-prompt-area hidden">
+        <textarea id="custom-prompt-input" class="prompt-textarea" rows="2" maxlength="120" placeholder="כתוב פרומפט משלך..."></textarea>
+        <div class="edit-prompt-actions">
+          <button id="btn-save-prompt" class="btn btn-small btn-primary">שמור</button>
+          <button id="btn-cancel-prompt" class="btn btn-small">ביטול</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table: the card play area -->
+    <div class="table-surface">
+      <div class="cards-row" id="cards-row">
+        <!-- Cards injected by JS -->
+      </div>
+
+    </div>
+
+    <!-- Action area -->
+    <div class="action-area" id="action-area">
+
+      <div id="action-waiting" class="action-waiting hidden">
+        <div class="spinner small"></div>
+        <span id="waiting-text">ממתין...</span>
+      </div>
+
+      <div id="action-reveal" class="action-reveal hidden">
+        <div id="reveal-result" class="reveal-result"></div>
+        <button id="btn-next-round" class="btn btn-primary btn-lg">סיבוב הבא →</button>
+      </div>
+
+    </div>
+
+    <!-- Mid-game settings overlay -->
+    <div id="mid-settings-overlay" class="overlay hidden">
+      <div class="mid-settings-box">
+        <div class="mid-settings-header">
+          <h3>הגדרות משחק</h3>
+          <button id="btn-close-mid-settings" class="btn-close-overlay">✕</button>
+        </div>
+        <div class="mid-settings-body">
+          <div class="settings-section">
+            <h4 class="settings-section-title">סוג המשחק</h4>
+            <div class="mode-options" id="mid-mode-options">
+              <div class="mode-card" data-midmode="fixed">
+                <div class="mode-card-title">משפט קבוע</div>
+              </div>
+              <div class="mode-card" data-midmode="choice">
+                <div class="mode-card-title">בחירת משפט</div>
+              </div>
+              <div class="mode-card" data-midmode="cards-only">
+                <div class="mode-card-title">קלפים בלבד</div>
+              </div>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h4 class="settings-section-title">קלפים בכל תור</h4>
+            <div class="cards-count-options" id="mid-count-options">
+              <button class="count-btn" data-midcount="2">2</button>
+              <button class="count-btn" data-midcount="3">3</button>
+              <button class="count-btn" data-midcount="4">4</button>
+              <button class="count-btn" data-midcount="5">5</button>
+            </div>
+          </div>
+        </div>
+        <p class="mid-settings-note">השינויים יכנסו לתוקף מהסיבוב הבא</p>
+      </div>
+    </div>
+
+    <!-- Disconnect overlay -->
+    <div id="disconnect-overlay" class="overlay hidden">
+      <div class="overlay-box">
+        <p class="overlay-emoji">😔</p>
+        <p id="disconnect-msg">השחקן התנתק</p>
+        <button onclick="location.reload()" class="btn btn-primary">חזור לדף הבית</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════════════════════════════════ SETTINGS ════════════════════════════════ -->
+  <div id="screen-settings" class="screen">
+    <div class="settings-header">
+      <button id="btn-back-to-landing" class="btn btn-ghost btn-small">→ חזור</button>
+      <h2 class="settings-title">הגדרות משחק</h2>
+    </div>
+    <div class="settings-body">
+
+      <!-- Mode selection -->
+      <div class="settings-section">
+        <h3 class="settings-section-title">סוג המשחק</h3>
+        <div class="mode-options">
+          <div class="mode-card selected" data-mode="fixed">
+            <div class="mode-card-title">משפט קבוע</div>
+            <div class="mode-card-desc">משפט אחד מוצג בכל תור — השחקן בוחר קלף שמתאים לו</div>
+          </div>
+          <div class="mode-card" data-mode="choice">
+            <div class="mode-card-title">בחירת משפט</div>
+            <div class="mode-card-desc">השחקן הפעיל בוחר מבין כמה משפטים — ואז בוחר קלף</div>
+          </div>
+          <div class="mode-card" data-mode="cards-only">
+            <div class="mode-card-title">קלפים בלבד</div>
+            <div class="mode-card-desc">אין משפט — השחקנים ממציאים את המשפט בעצמם</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards per round -->
+      <div class="settings-section">
+        <h3 class="settings-section-title">קלפים בכל תור</h3>
+        <div class="cards-count-options">
+          <button class="count-btn" data-count="2">2</button>
+          <button class="count-btn selected" data-count="3">3</button>
+          <button class="count-btn" data-count="4">4</button>
+          <button class="count-btn" data-count="5">5</button>
+        </div>
+      </div>
+
+      <!-- Child settings permission -->
+      <div class="settings-section">
+        <h3 class="settings-section-title">הרשאות</h3>
+        <label class="toggle-label">
+          <input type="checkbox" id="toggle-child-settings">
+          <span class="toggle-track"></span>
+          <span>אפשר למטופל/ת לשנות הגדרות תוך כדי משחק</span>
+        </label>
+      </div>
+
+      <!-- Prompts management (moved here) -->
+      <div class="settings-section" id="prompts-section">
+        <h3 class="settings-section-title">ניהול משפטים</h3>
+        <div id="prompts-categories"></div>
+      </div>
+
+      <button id="btn-create" class="btn btn-primary btn-lg">צור משחק</button>
+
+    </div>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
