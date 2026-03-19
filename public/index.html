@@ -297,10 +297,7 @@
         <span class="fp-player-name" id="fp-name-therapist">מטפל/ת</span>
         <span class="fp-player-hand">🃏 <span id="fp-count-therapist">0</span></span>
       </div>
-      <div class="fp-deck-badge">
-        <span id="fp-deck-num">52</span>
-        <small>בערימה</small>
-      </div>
+      <span class="fp-header-title">חפיסת קלפים</span>
       <div class="fp-player-block fp-player-right">
         <span class="fp-player-name" id="fp-name-child">ילד/ה</span>
         <span class="fp-player-hand">🃏 <span id="fp-count-child">0</span></span>
@@ -314,8 +311,20 @@
     </div>
 
     <div class="fp-controls">
-      <button id="btn-fp-flip" class="btn btn-primary btn-small">הפוך קלף</button>
-      <button id="btn-fp-deal" class="btn btn-secondary btn-small">חלק 3 לכל אחד</button>
+      <div class="fp-deck-stack">
+        <div class="fp-deck-visual">
+          <div class="fp-dc fp-dc-3"></div>
+          <div class="fp-dc fp-dc-2"></div>
+          <div class="fp-dc fp-dc-1">
+            <span id="fp-deck-num">52</span>
+          </div>
+        </div>
+        <small class="fp-deck-label">קלפים בערימה</small>
+      </div>
+      <div class="fp-controls-btns">
+        <button id="btn-fp-flip" class="btn btn-primary btn-small">הפוך קלף</button>
+        <button id="btn-fp-deal" class="btn btn-secondary btn-small">חלק 3 לכל אחד</button>
+      </div>
     </div>
 
     <div class="fp-hand-section">
@@ -326,6 +335,11 @@
 
     <div class="fp-end-area" id="fp-end-area">
       <button id="btn-fp-end" class="btn btn-ghost btn-small">סיום שיחה ✕</button>
+    </div>
+
+    <!-- Card zoom modal -->
+    <div id="fp-card-modal" class="fp-card-modal hidden">
+      <img class="fp-card-modal-img" id="fp-card-modal-img" src="" alt="">
     </div>
 
     <div id="fp-disconnect-overlay" class="overlay hidden">

@@ -984,6 +984,8 @@ function renderFreePlay(room) {
 function fpBuildCard(cardId, btnText, onClick) {
   const div = document.createElement('div');
   div.className = 'fp-card';
+  div.style.cursor = 'zoom-in';
+  div.addEventListener('click', () => fpShowCardModal(cardId));
 
   const img = document.createElement('img');
   img.src = `/cards/card_${String(cardId).padStart(2, '0')}.png`;
@@ -999,6 +1001,17 @@ function fpBuildCard(cardId, btnText, onClick) {
 
   return div;
 }
+
+function fpShowCardModal(cardId) {
+  const modal = document.getElementById('fp-card-modal');
+  document.getElementById('fp-card-modal-img').src =
+    `/cards/card_${String(cardId).padStart(2, '0')}.png`;
+  modal.classList.remove('hidden');
+}
+
+document.getElementById('fp-card-modal').addEventListener('click', () => {
+  document.getElementById('fp-card-modal').classList.add('hidden');
+});
 
 // ── Actions ───────────────────────────────────────────
 
