@@ -567,6 +567,13 @@ input, textarea { font-family: var(--font); direction: rtl; }
 }
 
 /* ── Prompt options (mode: choice) ── */
+.prompt-options-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px 4px;
+}
 .prompt-options-container {
   display: flex;
   flex-direction: column;
@@ -1179,6 +1186,13 @@ input, textarea { font-family: var(--font); direction: rtl; }
 }
 .card.pending-guess .card-confirm-hint {
   background: rgba(212,144,10,.92);
+}
+
+/* Chosen card — visible to chooser during guessing phase */
+.card.is-chosen {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(198,76,44,.14), var(--shadow-card);
 }
 
 /* ── Brand footer ── */

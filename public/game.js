@@ -521,6 +521,7 @@ function render(room) {
   if (room.phase === 'choosing-prompt') { renderChoosePrompt(room, isActive); return; }
   if (room.phase === 'free-play') { renderFreePlay(room); return; }
   showScreen('screen-game');
+  document.getElementById('prompt-options-area').classList.add('hidden');
   document.getElementById('solo-badge').classList.toggle('hidden', !room.solo);
   renderHeader(room);
   renderPhase(room, isActive);
@@ -564,18 +565,22 @@ function renderChoosePrompt(room, isActive) {
   banner.className = 'phase-banner phase-choosing';
   const activeName = room.activePlayer === 'therapist' ? room.therapistName : room.childName;
   document.getElementById('phase-text').textContent = isActive
-    ? 'בחר/י משפט — הקלפים כבר מחכים'
+    ? 'בחר/י משפט:'
     : `${activeName} בוחר/ת משפט...`;
+
+  // Prompt options go in the STICKY TOP area
+  const optionsArea = document.getElementById('prompt-options-area');
+  optionsArea.innerHTML = '';
+  document.getElementById('prompt-bubble').classList.add('hidden');
+  document.getElementById('action-area').innerHTML = '';
 
   // Show cards (non-selectable, for preview)
   const cardsRow = document.getElementById('cards-row');
   cardsRow.innerHTML = '';
   toCards(room.cards).forEach(cardId => cardsRow.appendChild(buildCard(cardId)));
 
-  document.getElementById('prompt-area').classList.add('hidden');
-  document.getElementById('action-area').innerHTML = '';
-
   if (!isActive) {
+    optionsArea.classList.add('hidden');
     const wait = document.createElement('div');
     wait.className = 'action-waiting';
     wait.innerHTML = '<div class="spinner small"></div><span>ממתין לבחירת משפט...</span>';
@@ -583,15 +588,14 @@ function renderChoosePrompt(room, isActive) {
     return;
   }
 
+  optionsArea.classList.remove('hidden');
   const options = room.promptOptions || [];
-  const container = document.createElement('div');
-  container.className = 'prompt-options-container';
   options.forEach(opt => {
     const btn = document.createElement('button');
     btn.className = 'prompt-option-btn';
     btn.textContent = opt.text;
     btn.addEventListener('click', async () => {
-      container.querySelectorAll('.prompt-option-btn').forEach(b => b.classList.add('dimmed'));
+      optionsArea.querySelectorAll('.prompt-option-btn').forEach(b => b.classList.add('dimmed'));
       btn.classList.remove('dimmed');
       btn.classList.add('selected');
       const usedPrompts = { ...(room.usedPrompts || {}), [opt.id]: true };
@@ -601,11 +605,9 @@ function renderChoosePrompt(room, isActive) {
         promptId: opt.id,
         usedPrompts,
       });
-      document.getElementById('prompt-area').classList.remove('hidden');
     });
-    container.appendChild(btn);
+    optionsArea.appendChild(btn);
   });
-  document.getElementById('action-area').appendChild(container);
 }
 
 // ── Header ────────────────────────────────────────────
@@ -785,6 +787,11 @@ function renderCards(room, isActive) {
         card.classList.add('dimmed');
       }
     } else {
+      // Chooser sees their own chosen card highlighted while waiting for guess
+      if (room.phase === 'guessing' && isActive && cardId === room.secretChoice) {
+        card.classList.add('is-chosen');
+      }
+
       const selectable =
         (room.phase === 'choosing' && isActive) ||
         (room.phase === 'guessing' && !isActive);
@@ -893,7 +900,7 @@ function renderActions(room, isActive) {
   } else if (room.phase === 'guessing') {
     if (isActive) {
       waiting.classList.remove('hidden');
-      document.getElementById('waiting-text').textContent = 'ממתין לניחוש...';
+      document.getElementById('waiting-text').textContent = 'הקלף שלך נבחר — ממתינים לניחוש';
     }
   } else if (room.phase === 'reveal') {
     reveal.classList.remove('hidden');
