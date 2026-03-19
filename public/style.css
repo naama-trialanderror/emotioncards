@@ -87,7 +87,6 @@ input, textarea { font-family: var(--font); direction: rtl; }
 #screen-landing {
   justify-content: flex-start;
   background: var(--bg);
-  padding-bottom: 60px;
 }
 
 /* Top bar */
