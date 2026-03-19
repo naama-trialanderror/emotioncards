@@ -512,11 +512,13 @@ function renderChoosePrompt(room, isActive) {
   banner.className = 'phase-banner phase-choosing';
   const activeName = room.activePlayer === 'therapist' ? room.therapistName : room.childName;
   document.getElementById('phase-text').textContent = isActive
-    ? 'בחר/י משפט שמתאים לתור'
+    ? 'בחר/י משפט — הקלפים כבר מחכים'
     : `${activeName} בוחר/ת משפט...`;
 
+  // Show cards (non-selectable, for preview)
   const cardsRow = document.getElementById('cards-row');
   cardsRow.innerHTML = '';
+  toCards(room.cards).forEach(cardId => cardsRow.appendChild(buildCard(cardId)));
 
   document.getElementById('prompt-area').classList.add('hidden');
   document.getElementById('action-area').innerHTML = '';
