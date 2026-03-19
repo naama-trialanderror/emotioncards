@@ -424,9 +424,9 @@ document.getElementById('btn-start-solo').addEventListener('click', async () => 
   const snap = await get(ref(db, `rooms/${roomCode}`));
   const room = snap.val();
   if (room.gameMode === 'free-play') {
-    writeNewFreePlayGame();
+    await writeNewFreePlayGame();
   } else {
-    writeNewRound(room, 'therapist', 1);
+    await writeNewRound(room, 'therapist', 1);
   }
 });
 
