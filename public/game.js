@@ -986,9 +986,14 @@ function renderFreePlay(room) {
 }
 
 function fpBuildCard(cardId, btnText, onClick, noteData = null, isTableCard = false) {
+  // Wrapper holds the card + optional note paper beneath it
+  const wrap = document.createElement('div');
+  wrap.className = isTableCard ? 'fp-card-wrap' : 'fp-card-wrap fp-card-wrap--hand';
+
   const div = document.createElement('div');
   div.className = 'fp-card';
   div.addEventListener('click', () => fpShowCardModal(cardId));
+  wrap.appendChild(div);
 
   const img = document.createElement('img');
   img.src = `/cards/card_${String(cardId).padStart(2, '0')}.png`;
@@ -996,22 +1001,13 @@ function fpBuildCard(cardId, btnText, onClick, noteData = null, isTableCard = fa
   img.onerror = () => img.remove();
   div.appendChild(img);
 
-  // Zoom icon (always visible, discoverable on mobile)
+  // Zoom icon
   const zoomBtn = document.createElement('button');
   zoomBtn.className = 'fp-zoom-btn';
   zoomBtn.title = 'הגדל';
   zoomBtn.textContent = '🔍';
   zoomBtn.addEventListener('click', e => { e.stopPropagation(); fpShowCardModal(cardId); });
   div.appendChild(zoomBtn);
-
-  // Note overlay (if note exists)
-  if (noteData) {
-    const noteEl = document.createElement('div');
-    noteEl.className = 'fp-note-overlay';
-    noteEl.style.background = noteData.color;
-    noteEl.textContent = noteData.text;
-    div.appendChild(noteEl);
-  }
 
   // Note button (table cards only)
   if (isTableCard) {
@@ -1029,7 +1025,16 @@ function fpBuildCard(cardId, btnText, onClick, noteData = null, isTableCard = fa
   if (onClick) btn.addEventListener('click', e => { e.stopPropagation(); onClick(); });
   div.appendChild(btn);
 
-  return div;
+  // Note paper — appears below the card, not on top
+  if (noteData) {
+    const paper = document.createElement('div');
+    paper.className = 'fp-note-paper';
+    paper.style.background = noteData.color;
+    paper.textContent = noteData.text;
+    wrap.appendChild(paper);
+  }
+
+  return wrap;
 }
 
 function fpShowCardModal(cardId) {
