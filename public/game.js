@@ -416,17 +416,20 @@ document.getElementById('btn-start').addEventListener('click', async () => {
 // ── Start solo browse ─────────────────────────────────
 
 document.getElementById('btn-start-solo').addEventListener('click', async () => {
-  await update(ref(db, `rooms/${roomCode}`), {
-    childName:      'מטופל',
-    childConnected: true,
-    solo:           true,
-  });
-  const snap = await get(ref(db, `rooms/${roomCode}`));
-  const room = snap.val();
-  if (room.gameMode === 'free-play') {
-    await writeNewFreePlayGame();
-  } else {
-    await writeNewRound(room, 'therapist', 1);
+  try {
+    await update(ref(db, `rooms/${roomCode}`), {
+      childName:      'מטופל',
+      childConnected: true,
+      solo:           true,
+    });
+    const room = { ...currentRoom, childName: 'מטופל', childConnected: true, solo: true };
+    if (room.gameMode === 'free-play') {
+      await writeNewFreePlayGame();
+    } else {
+      await writeNewRound(room, 'therapist', 1);
+    }
+  } catch (e) {
+    showError('שגיאה בפתיחת עיון לבד: ' + e.message);
   }
 });
 
