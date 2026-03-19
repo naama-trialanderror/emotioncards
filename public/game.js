@@ -83,7 +83,7 @@ let PROMPTS = [
   { id:'p39', text:'המשחק או הסרט שהכי משפיע עלי הוא...', category:'play', enabled:true },
 ];
 
-const TOTAL_CARDS = 52;
+const TOTAL_CARDS = 95;
 
 // ── Local state ───────────────────────────────────────
 
@@ -231,26 +231,29 @@ document.getElementById('btn-create').addEventListener('click', async () => {
 });
 
 document.getElementById('btn-join').addEventListener('click', async () => {
-  const name = document.getElementById('child-name').value.trim();
-  const code = document.getElementById('room-code-input').value.trim().toUpperCase();
-  if (!name) return showError('נא להזין שם');
-  if (code.length < 4) return showError('נא להזין קוד חדר');
+  try {
+    const name = document.getElementById('child-name').value.trim();
+    const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+    if (!name) return showError('נא להזין שם');
+    if (code.length < 4) return showError('נא להזין קוד חדר');
 
-  const snap = await get(ref(db, `rooms/${code}`));
-  if (!snap.exists()) return showError('קוד חדר לא נמצא. בדוק שוב.');
-  const room = snap.val();
-  if (room.childConnected) return showError('החדר כבר מלא.');
+    const snap = await get(ref(db, `rooms/${code}`));
+    if (!snap.exists()) return showError('קוד חדר לא נמצא. בדוק שוב.');
+    const room = snap.val();
+    if (room.childConnected) return showError('החדר כבר מלא.');
 
-  roomCode = code;
-  myRole   = 'child';
+    roomCode = code;
+    myRole   = 'child';
 
-  await update(ref(db, `rooms/${code}`), { childName: name, childConnected: true });
+    await update(ref(db, `rooms/${code}`), { childName: name, childConnected: true });
 
-  showScreen('screen-lobby');
-  document.getElementById('lobby-code-section').classList.add('hidden');
-  document.getElementById('child-lobby-msg').classList.remove('hidden');
-  document.getElementById('lobby-status-text').textContent = 'מחוברים! ממתינים למטפל/ת...';
-  listenToRoom(code);
+    showScreen('screen-lobby');
+    document.getElementById('child-lobby-msg').classList.remove('hidden');
+    document.getElementById('lobby-status-text').textContent = `ממתינים ל${room.therapistName || 'המטפל/ת'}...`;
+    listenToRoom(code);
+  } catch (e) {
+    showError('שגיאה בהצטרפות: ' + e.message);
+  }
 });
 
 // Enter key support
@@ -545,13 +548,14 @@ function renderLobby(room) {
       document.getElementById('btn-start').classList.remove('hidden');
       document.getElementById('lobby-solo-section').classList.add('hidden');
     } else {
-      document.getElementById('lobby-status-text').textContent = 'ממתין למטופל...';
+      document.getElementById('lobby-status-text').textContent = 'ממתין...';
       document.getElementById('lobby-spinner').classList.remove('hidden');
       document.getElementById('btn-start').classList.add('hidden');
       document.getElementById('lobby-solo-section').classList.remove('hidden');
     }
   } else {
     document.getElementById('lobby-instructions').classList.add('hidden');
+    document.getElementById('lobby-status-text').textContent = `ממתינים ל${room.therapistName}...`;
   }
 }
 
@@ -572,6 +576,8 @@ function renderChoosePrompt(room, isActive) {
   const optionsArea = document.getElementById('prompt-options-area');
   optionsArea.innerHTML = '';
   document.getElementById('prompt-bubble').classList.add('hidden');
+
+  // Clear action area (we own it entirely)
   document.getElementById('action-area').innerHTML = '';
 
   // Show cards (non-selectable, for preview)
@@ -583,7 +589,7 @@ function renderChoosePrompt(room, isActive) {
     optionsArea.classList.add('hidden');
     const wait = document.createElement('div');
     wait.className = 'action-waiting';
-    wait.innerHTML = '<div class="spinner small"></div><span>ממתין לבחירת משפט...</span>';
+    wait.innerHTML = `<div class="spinner small"></div><span>${activeName} בוחר/ת משפט...</span>`;
     document.getElementById('action-area').appendChild(wait);
     return;
   }
@@ -786,11 +792,10 @@ function renderCards(room, isActive) {
       } else {
         card.classList.add('dimmed');
       }
+      container.appendChild(card);
     } else {
-      // Chooser sees their own chosen card highlighted while waiting for guess
-      if (room.phase === 'guessing' && isActive && cardId === room.secretChoice) {
-        card.classList.add('is-chosen');
-      }
+      // Chooser sees their own chosen card in a highlighted box during guessing phase
+      const isChosen = room.phase === 'guessing' && isActive && cardId === room.secretChoice;
 
       const selectable =
         (room.phase === 'choosing' && isActive) ||
@@ -801,23 +806,31 @@ function renderCards(room, isActive) {
         card.addEventListener('click', () => handleCardClick(cardId, room, isActive));
 
         if (pendingCard === cardId) {
-          // This card is pending confirmation
           card.classList.add(room.phase === 'choosing' ? 'pending-choose' : 'pending-guess');
           const hint = document.createElement('div');
           hint.className = 'card-confirm-hint';
           hint.textContent = 'לחץ/י שוב לאישור';
           card.appendChild(hint);
         } else if (pendingCard !== null) {
-          // Another card is pending — dim this one
           card.classList.add('pending-dimmed');
         } else {
-          // Normal hover effect
           card.classList.add(room.phase === 'choosing' ? 'phase-choosing' : 'phase-guessing');
         }
       }
-    }
 
-    container.appendChild(card);
+      if (isChosen) {
+        const wrap = document.createElement('div');
+        wrap.className = 'chosen-card-wrap';
+        const label = document.createElement('span');
+        label.className = 'chosen-card-label';
+        label.textContent = 'הקלף שלך';
+        wrap.appendChild(label);
+        wrap.appendChild(card);
+        container.appendChild(wrap);
+      } else {
+        container.appendChild(card);
+      }
+    }
   });
 }
 
@@ -887,35 +900,48 @@ async function handleCardClick(cardId, room, isActive) {
 // ── Actions ───────────────────────────────────────────
 
 function renderActions(room, isActive) {
-  const waiting = document.getElementById('action-waiting');
-  const reveal  = document.getElementById('action-reveal');
-
-  waiting.classList.add('hidden');
-  reveal.classList.add('hidden');
+  const area = document.getElementById('action-area');
+  area.innerHTML = '';
   document.getElementById('btn-next-round-top').classList.add('hidden');
 
+  const activeName  = room.activePlayer === 'therapist' ? room.therapistName : room.childName;
+  const guesserName = room.activePlayer === 'therapist' ? room.childName     : room.therapistName;
+
   if (room.phase === 'choosing' && !isActive) {
-    waiting.classList.remove('hidden');
-    document.getElementById('waiting-text').textContent = 'ממתין לבחירת השחקן...';
-  } else if (room.phase === 'guessing') {
-    if (isActive) {
-      waiting.classList.remove('hidden');
-      document.getElementById('waiting-text').textContent = 'הקלף שלך נבחר — ממתינים לניחוש';
-    }
+    const div = document.createElement('div');
+    div.className = 'action-waiting';
+    div.innerHTML = `<div class="spinner small"></div><span>ממתין ל${activeName}...</span>`;
+    area.appendChild(div);
+
+  } else if (room.phase === 'guessing' && isActive) {
+    const div = document.createElement('div');
+    div.className = 'action-waiting';
+    div.innerHTML = `<div class="spinner small"></div><span>הקלף שלך נבחר — ממתינים לניחוש</span>`;
+    area.appendChild(div);
+
   } else if (room.phase === 'reveal') {
-    reveal.classList.remove('hidden');
-    document.getElementById('btn-next-round-top').classList.remove('hidden');
     const correct = room.secretChoice === room.guess;
-    const result  = document.getElementById('reveal-result');
-    if (correct) {
-      const guesserName = room.activePlayer === 'therapist' ? room.childName : room.therapistName;
-      result.textContent = `${guesserName} ניחש/ה נכון!`;
-      result.className = 'reveal-result correct';
-    } else {
-      const activeName = room.activePlayer === 'therapist' ? room.therapistName : room.childName;
-      result.textContent = `לא נוחש — ${activeName} קיבל/ה 3 נקודות`;
-      result.className = 'reveal-result wrong';
-    }
+    const resultText = correct
+      ? `${guesserName} ניחש/ה נכון!`
+      : `לא נוחש — ${activeName} קיבל/ה 3 נקודות`;
+
+    const revealDiv = document.createElement('div');
+    revealDiv.className = 'action-reveal';
+
+    const result = document.createElement('div');
+    result.className = `reveal-result ${correct ? 'correct' : 'wrong'}`;
+    result.textContent = resultText;
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-primary btn-lg';
+    nextBtn.style.maxWidth = '240px';
+    nextBtn.textContent = 'סיבוב הבא →';
+    nextBtn.addEventListener('click', nextRound);
+
+    revealDiv.appendChild(result);
+    revealDiv.appendChild(nextBtn);
+    area.appendChild(revealDiv);
+    document.getElementById('btn-next-round-top').classList.remove('hidden');
   }
 }
 
@@ -925,7 +951,6 @@ async function nextRound() {
   await writeNewRound(currentRoom, nextActive, currentRoom.round + 1);
 }
 
-document.getElementById('btn-next-round').addEventListener('click', nextRound);
 document.getElementById('btn-next-round-top').addEventListener('click', nextRound);
 
 // ══════════════════════════════════════════════════════

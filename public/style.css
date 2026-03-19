@@ -481,11 +481,24 @@ input, textarea { font-family: var(--font); direction: rtl; }
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
-  padding: 28px 20px 60px;
+  padding: 28px 20px 24px;
   display: flex;
   flex-direction: column;
   gap: 36px;
 }
+
+.settings-footer {
+  width: 100%;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 14px 24px 20px;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+}
+.settings-footer .btn { max-width: 320px; }
 
 .settings-section {
   display: flex;
@@ -1189,10 +1202,21 @@ input, textarea { font-family: var(--font); direction: rtl; }
 }
 
 /* Chosen card — visible to chooser during guessing phase */
-.card.is-chosen {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
-  box-shadow: 0 0 0 6px rgba(198,76,44,.14), var(--shadow-card);
+.chosen-card-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent-light);
+  border: 2px solid rgba(200,98,74,.3);
+  border-radius: var(--r-xl);
+  padding: 10px 12px 12px;
+}
+.chosen-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: .04em;
 }
 
 /* ── Brand footer ── */
