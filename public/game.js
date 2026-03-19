@@ -265,13 +265,31 @@ document.getElementById('btn-join').addEventListener('click', async () => {
   })
 );
 
-// ── Copy room code ────────────────────────────────────
+// ── URL param: auto-fill join code ────────────────────
+
+(function () {
+  const joinCode = new URLSearchParams(location.search).get('join');
+  if (joinCode) {
+    const input = document.getElementById('room-code-input');
+    if (input) input.value = joinCode.toUpperCase();
+  }
+})();
+
+// ── Copy room code / link ─────────────────────────────
 
 document.getElementById('btn-copy-code').addEventListener('click', () => {
   navigator.clipboard.writeText(roomCode || '');
   const btn = document.getElementById('btn-copy-code');
-  btn.textContent = '✅';
-  setTimeout(() => btn.textContent = '📋', 1500);
+  btn.textContent = '✅ הועתק';
+  setTimeout(() => btn.textContent = '📋 העתק קוד', 1500);
+});
+
+document.getElementById('btn-copy-link').addEventListener('click', () => {
+  const url = `${location.origin}/?join=${roomCode}`;
+  navigator.clipboard.writeText(url);
+  const btn = document.getElementById('btn-copy-link');
+  btn.textContent = '✅ הועתק';
+  setTimeout(() => btn.textContent = '🔗 העתק לינק', 1500);
 });
 
 let _promptCounter = 40;
@@ -395,6 +413,23 @@ document.getElementById('btn-start').addEventListener('click', async () => {
   }
 });
 
+// ── Start solo browse ─────────────────────────────────
+
+document.getElementById('btn-start-solo').addEventListener('click', async () => {
+  await update(ref(db, `rooms/${roomCode}`), {
+    childName:      'מטופל',
+    childConnected: true,
+    solo:           true,
+  });
+  const snap = await get(ref(db, `rooms/${roomCode}`));
+  const room = snap.val();
+  if (room.gameMode === 'free-play') {
+    writeNewFreePlayGame();
+  } else {
+    writeNewRound(room, 'therapist', 1);
+  }
+});
+
 // ══════════════════════════════════════════════════════
 // FIREBASE LISTENER
 // ══════════════════════════════════════════════════════
@@ -471,11 +506,19 @@ function render(room) {
     prevPhase = room.phase;
   }
   document.getElementById('btn-next-round-top').classList.add('hidden');
-  const isActive = myRole === room.activePlayer;
+
+  // In solo mode therapist acts for both sides.
+  // During guessing, the guesser is the non-active player (!isActive),
+  // so we set isActive=false so the therapist can guess too.
+  const isActive = room.solo
+    ? room.phase !== 'guessing'
+    : myRole === room.activePlayer;
+
   if (room.phase === 'lobby') { renderLobby(room); return; }
   if (room.phase === 'choosing-prompt') { renderChoosePrompt(room, isActive); return; }
   if (room.phase === 'free-play') { renderFreePlay(room); return; }
   showScreen('screen-game');
+  document.getElementById('solo-badge').classList.toggle('hidden', !room.solo);
   renderHeader(room);
   renderPhase(room, isActive);
   renderPrompt(room, isActive);
@@ -489,16 +532,22 @@ function renderLobby(room) {
   showScreen('screen-lobby');
   if (myRole === 'therapist') {
     document.getElementById('therapist-lobby-controls').classList.remove('hidden');
+    document.getElementById('lobby-share-section').classList.remove('hidden');
+    document.getElementById('lobby-instructions').classList.remove('hidden');
     if (room.childConnected) {
-      document.getElementById('lobby-status-text').textContent =
-        `${room.childName} הצטרף/ה!`;
+      document.getElementById('lobby-status-text').textContent = `${room.childName} הצטרף/ה! 🎉`;
       document.getElementById('lobby-spinner').classList.add('hidden');
       document.getElementById('btn-start').classList.remove('hidden');
+      document.getElementById('btn-start-solo').classList.add('hidden');
     } else {
-      document.getElementById('lobby-status-text').textContent = 'ממתין לשחקן השני...';
+      document.getElementById('lobby-status-text').textContent = 'ממתין למטופל...';
       document.getElementById('lobby-spinner').classList.remove('hidden');
       document.getElementById('btn-start').classList.add('hidden');
+      document.getElementById('btn-start-solo').classList.remove('hidden');
     }
+  } else {
+    document.getElementById('lobby-share-section').classList.add('hidden');
+    document.getElementById('lobby-instructions').classList.add('hidden');
   }
 }
 

@@ -78,26 +78,46 @@
   <!-- ═══════════════════════════════════ LOBBY ════════════════════════════════════ -->
   <div id="screen-lobby" class="screen">
     <div class="lobby-wrap">
-<div id="lobby-code-section">
-        <p class="lobby-label">שתף את הקוד הזה עם השחקן השני:</p>
+
+      <!-- Share section — therapist only -->
+      <div id="lobby-share-section">
+        <p class="lobby-label">שיתוף עם המטופל</p>
         <div class="lobby-code-box">
           <span id="display-code" class="lobby-code">-----</span>
-          <button id="btn-copy-code" class="btn btn-small" title="העתק">📋</button>
+        </div>
+        <div class="lobby-share-btns">
+          <button id="btn-copy-code" class="btn btn-secondary btn-small">📋 העתק קוד</button>
+          <button id="btn-copy-link" class="btn btn-secondary btn-small">🔗 העתק לינק</button>
         </div>
       </div>
 
+      <!-- Instructions — therapist only -->
+      <div id="lobby-instructions" class="lobby-instructions">
+        <p class="lobby-instructions-title">איך מתחילים?</p>
+        <ol class="lobby-steps">
+          <li>שלח/י למטופל את הקוד או הלינק</li>
+          <li>המטופל נכנס לאתר ומקליד את הקוד</li>
+          <li>כשהמטופל מחובר — לחץ/י "התחל משחק"</li>
+        </ol>
+      </div>
+
+      <!-- Status -->
       <div class="lobby-status-wrap">
         <div id="lobby-spinner" class="spinner"></div>
-        <p id="lobby-status-text">ממתין לשחקן השני...</p>
+        <p id="lobby-status-text">ממתין למטופל...</p>
       </div>
 
+      <!-- Therapist controls -->
       <div id="therapist-lobby-controls" class="hidden">
         <button id="btn-start" class="btn btn-primary btn-lg hidden">התחל משחק ▶</button>
+        <button id="btn-start-solo" class="btn btn-ghost btn-small lobby-solo-btn">עיון לבד (בלי מטופל)</button>
       </div>
 
+      <!-- Child waiting message -->
       <div id="child-lobby-msg" class="hidden lobby-child-wait">
         <p>מחכים למטפל/ת להתחיל...</p>
       </div>
+
     </div>
     <footer class="brand-footer">
       <a href="https://naamanaveh.com/" target="_blank" rel="noopener noreferrer" class="brand-footer-link">
@@ -109,6 +129,9 @@
 
   <!-- ═══════════════════════════════════ GAME ════════════════════════════════════ -->
   <div id="screen-game" class="screen">
+
+    <!-- Solo browse badge -->
+    <div id="solo-badge" class="solo-badge hidden">מצב עיון — בלי מטופל</div>
 
     <!-- Header: scores -->
     <header class="game-header">

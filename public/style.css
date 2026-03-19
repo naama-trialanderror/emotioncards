@@ -301,34 +301,85 @@ input, textarea { font-family: var(--font); direction: rtl; }
 }
 
 .lobby-code-box {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
   background: var(--bg);
   border: 1.5px solid var(--border);
   border-radius: var(--r-lg);
-  padding: 18px 26px;
+  padding: 16px 28px;
   box-shadow: var(--shadow-sm);
 }
 
 .lobby-code {
-  font-size: 36px;
+  font-size: 40px;
   font-weight: 700;
-  letter-spacing: 10px;
+  letter-spacing: 12px;
   color: var(--accent);
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
 }
 
-#btn-copy-code {
-  color: var(--text-mid);
-  font-size: 17px;
-  padding: 6px 10px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--r-sm);
-  width: auto;
-  transition: color var(--t), border-color var(--t);
+.lobby-share-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
 }
-#btn-copy-code:hover { color: var(--text); border-color: var(--border-dark); }
+.lobby-share-btns .btn { font-size: 13px; }
+
+/* Instructions box */
+.lobby-instructions {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 22px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: right;
+}
+.lobby-instructions-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-mid);
+  margin: 0 0 10px;
+  text-align: center;
+}
+.lobby-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: steps;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lobby-steps li {
+  counter-increment: steps;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.lobby-steps li::before {
+  content: counter(steps);
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Solo browse button */
+.lobby-solo-btn {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
 
 .lobby-status-wrap {
   display: flex;
@@ -337,6 +388,19 @@ input, textarea { font-family: var(--font); direction: rtl; }
   gap: 12px;
 }
 #lobby-status-text { font-size: 15px; color: var(--text-mid); font-weight: 300; }
+
+/* Solo badge */
+.solo-badge {
+  background: #fff3cd;
+  border-bottom: 1.5px solid #e6c84a;
+  color: #7a6200;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  padding: 6px 0;
+  width: 100%;
+  letter-spacing: .03em;
+}
 
 /* Toggle */
 .toggle-label {
