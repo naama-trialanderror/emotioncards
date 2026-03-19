@@ -95,6 +95,9 @@ let selectedMode = 'fixed';       // 'fixed' | 'choice' | 'cards-only'
 let selectedCardsCount = 3;
 let selectedChildCanSettings = false;
 
+let pendingCard = null;  // local pending selection (not synced to Firebase)
+let prevPhase   = null;  // track phase changes to reset pending
+
 // ── Helpers ───────────────────────────────────────────
 
 function shuffle(arr) {
@@ -137,6 +140,8 @@ function toCards(val) {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  const footer = document.getElementById('brand-footer');
+  if (footer) footer.style.display = id === 'screen-game' ? 'none' : '';
 }
 
 function showError(msg) {
@@ -458,6 +463,11 @@ async function writeNewRound(room, activePlayer, round) {
 // ══════════════════════════════════════════════════════
 
 function render(room) {
+  // Reset pending selection when phase changes
+  if (room.phase !== prevPhase) {
+    pendingCard = null;
+    prevPhase = room.phase;
+  }
   document.getElementById('btn-next-round-top').classList.add('hidden');
   const isActive = myRole === room.activePlayer;
   if (room.phase === 'lobby') { renderLobby(room); return; }
@@ -598,19 +608,20 @@ document.querySelectorAll('[data-midcount]').forEach(btn => {
 function renderPhase(room, isActive) {
   const banner = document.getElementById('phase-banner');
   const text   = document.getElementById('phase-text');
-  const activeName = room.activePlayer === 'therapist' ? room.therapistName : room.childName;
+  const activeName   = room.activePlayer === 'therapist' ? room.therapistName : room.childName;
+  const myTurn = (room.phase === 'choosing' && isActive) ||
+                 (room.phase === 'guessing' && !isActive);
 
-  banner.className = `phase-banner phase-${room.phase}`;
+  banner.className = `phase-banner phase-${room.phase}${myTurn ? ' my-turn' : ''}`;
 
   if (room.phase === 'choosing') {
     text.textContent = isActive
-      ? 'תורך לבחור קלף שמתאים למשפט'
-      : `${activeName} בוחר/ת קלף...`;
+      ? 'תורך! בחר/י קלף שמתאים למשפט'
+      : `ממתינים ל${activeName} לבחור קלף...`;
   } else if (room.phase === 'guessing') {
-    const guesserName = room.activePlayer === 'therapist' ? room.childName : room.therapistName;
-    text.textContent = isActive
-      ? `${guesserName} מנחש/ת...`
-      : 'נחש/י — לאיזה קלף התכוון/נה?';
+    text.textContent = !isActive
+      ? 'תורך לנחש! לאיזה קלף התכוונו?'
+      : `ממתינים לניחוש...`;
   } else if (room.phase === 'reveal') {
     text.textContent = 'חשיפה!';
   }
@@ -723,13 +734,22 @@ function renderCards(room, isActive) {
 
       if (selectable) {
         card.classList.add('selectable');
-        card.classList.add(room.phase === 'choosing' ? 'phase-choosing' : 'phase-guessing');
         card.addEventListener('click', () => handleCardClick(cardId, room, isActive));
-      }
 
-      // Active player sees own choice during guessing phase
-      if (room.phase === 'guessing' && isActive && cardId === room.secretChoice) {
-        card.classList.add('indicator-chosen');
+        if (pendingCard === cardId) {
+          // This card is pending confirmation
+          card.classList.add(room.phase === 'choosing' ? 'pending-choose' : 'pending-guess');
+          const hint = document.createElement('div');
+          hint.className = 'card-confirm-hint';
+          hint.textContent = 'לחץ/י שוב לאישור';
+          card.appendChild(hint);
+        } else if (pendingCard !== null) {
+          // Another card is pending — dim this one
+          card.classList.add('pending-dimmed');
+        } else {
+          // Normal hover effect
+          card.classList.add(room.phase === 'choosing' ? 'phase-choosing' : 'phase-guessing');
+        }
       }
     }
 
@@ -759,28 +779,44 @@ function buildCard(cardId) {
 
 async function handleCardClick(cardId, room, isActive) {
   if (room.phase === 'choosing' && isActive) {
-    const typedText = room.gameMode === 'cards-only'
-      ? (document.getElementById('cards-only-text').value.trim() || null)
-      : undefined;
-    const update_data = { secretChoice: cardId, phase: 'guessing' };
-    if (typedText !== undefined) update_data.promptText = typedText;
-    document.getElementById('cards-only-text').value = '';
-    await update(ref(db, `rooms/${roomCode}`), update_data);
+    if (pendingCard === cardId) {
+      // Second click — confirm
+      pendingCard = null;
+      const typedText = room.gameMode === 'cards-only'
+        ? (document.getElementById('cards-only-text').value.trim() || null)
+        : undefined;
+      const update_data = { secretChoice: cardId, phase: 'guessing' };
+      if (typedText !== undefined) update_data.promptText = typedText;
+      document.getElementById('cards-only-text').value = '';
+      await update(ref(db, `rooms/${roomCode}`), update_data);
+    } else {
+      // First click — mark as pending
+      pendingCard = cardId;
+      renderCards(room, isActive);
+    }
   } else if (room.phase === 'guessing' && !isActive) {
-    const correct = cardId === room.secretChoice;
-    const therapistIsActive = room.activePlayer === 'therapist';
-    const tScore = room.therapistScore + (therapistIsActive
-      ? (correct ? 1 : 3)
-      : (correct ? 3 : 0));
-    const cScore = room.childScore + (!therapistIsActive
-      ? (correct ? 1 : 3)
-      : (correct ? 3 : 0));
-    await update(ref(db, `rooms/${roomCode}`), {
-      guess: cardId,
-      phase: 'reveal',
-      therapistScore: tScore,
-      childScore: cScore,
-    });
+    if (pendingCard === cardId) {
+      // Second click — confirm
+      pendingCard = null;
+      const correct = cardId === room.secretChoice;
+      const therapistIsActive = room.activePlayer === 'therapist';
+      const tScore = room.therapistScore + (therapistIsActive
+        ? (correct ? 1 : 3)
+        : (correct ? 3 : 0));
+      const cScore = room.childScore + (!therapistIsActive
+        ? (correct ? 1 : 3)
+        : (correct ? 3 : 0));
+      await update(ref(db, `rooms/${roomCode}`), {
+        guess: cardId,
+        phase: 'reveal',
+        therapistScore: tScore,
+        childScore: cScore,
+      });
+    } else {
+      // First click — mark as pending
+      pendingCard = cardId;
+      renderCards(room, isActive);
+    }
   }
 }
 
