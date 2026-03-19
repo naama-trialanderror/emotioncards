@@ -381,11 +381,20 @@ input, textarea { font-family: var(--font); direction: rtl; }
   padding-top: 2px;
 }
 
-/* Solo browse button */
-.lobby-solo-btn {
-  margin-top: 4px;
+/* Solo browse section */
+.lobby-solo-section {
+  width: 100%;
+  border-top: 1.5px solid var(--border);
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.lobby-solo-hint {
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--text-mid);
+  margin: 0;
 }
 
 .lobby-status-wrap {
@@ -1201,7 +1210,7 @@ input, textarea { font-family: var(--font); direction: rtl; }
   text-decoration-color: var(--border-dark);
 }
 .brand-footer-logo {
-  height: 56px;
+  height: 72px;
   width: auto;
   object-fit: contain;
   display: block;
@@ -1488,16 +1497,14 @@ input, textarea { font-family: var(--font); direction: rtl; }
 
 /* ── Card + note wrapper ── */
 .fp-card-wrap {
-  width: clamp(150px, 42vw, 230px);
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  /* width is driven by .fp-card's natural clamp() width */
 }
-.fp-card-wrap .fp-card { width: 100%; }
 /* Square bottom corners when note paper is attached */
 .fp-card-wrap:has(.fp-note-paper) .fp-card {
   border-radius: var(--r) var(--r) 0 0;
-  overflow: hidden;
 }
 
 /* ── Note paper — sits below the card ── */

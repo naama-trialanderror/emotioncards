@@ -542,12 +542,12 @@ function renderLobby(room) {
       document.getElementById('lobby-status-text').textContent = `${room.childName} מחובר/ת! 🎉`;
       document.getElementById('lobby-spinner').classList.add('hidden');
       document.getElementById('btn-start').classList.remove('hidden');
-      document.getElementById('btn-start-solo').classList.add('hidden');
+      document.getElementById('lobby-solo-section').classList.add('hidden');
     } else {
       document.getElementById('lobby-status-text').textContent = 'ממתין למטופל...';
       document.getElementById('lobby-spinner').classList.remove('hidden');
       document.getElementById('btn-start').classList.add('hidden');
-      document.getElementById('btn-start-solo').classList.remove('hidden');
+      document.getElementById('lobby-solo-section').classList.remove('hidden');
     }
   } else {
     document.getElementById('lobby-instructions').classList.add('hidden');
