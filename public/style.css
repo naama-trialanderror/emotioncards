@@ -271,8 +271,12 @@ input, textarea { font-family: var(--font); direction: rtl; }
    ═══════════════════════════════════════════════════════ */
 
 #screen-lobby {
-  justify-content: center;
+  justify-content: flex-start;
   background: linear-gradient(160deg, #fdf8f4 0%, #f0ede8 100%);
+}
+
+.lobby-wrap {
+  margin: auto 0; /* vertically center within available space */
 }
 
 .lobby-wrap {
@@ -1104,6 +1108,7 @@ input, textarea { font-family: var(--font); direction: rtl; }
   background: var(--bg-soft);
   border-top: 1px solid var(--border);
   padding: 20px 20px 28px;
+  margin-top: auto;
 }
 .brand-footer-link {
   display: flex;
