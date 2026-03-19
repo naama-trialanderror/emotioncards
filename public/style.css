@@ -1100,38 +1100,31 @@ input, textarea { font-family: var(--font); direction: rtl; }
 
 /* ── Brand footer ── */
 .brand-footer {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  z-index: 50;
-  background: rgba(255,255,255,.95);
-  backdrop-filter: blur(8px);
+  width: 100%;
+  background: var(--bg-soft);
   border-top: 1px solid var(--border);
-  padding: 10px 20px;
+  padding: 20px 20px 28px;
 }
 .brand-footer-link {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 14px;
   text-decoration: none;
   color: var(--text-mid);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   transition: opacity var(--t);
-  opacity: .8;
+  opacity: .75;
+  flex-wrap: wrap;
 }
 .brand-footer-link:hover { opacity: 1; }
-.brand-footer-link strong { font-weight: 600; color: var(--text); }
 .brand-footer-logo {
-  height: 38px;
+  height: 56px;
   width: auto;
   object-fit: contain;
   display: block;
 }
-
-/* Add bottom padding to non-game screens so footer doesn't overlap */
-#screen-landing  { padding-bottom: 70px; }
-#screen-settings { padding-bottom: 70px; }
 
 /* ── Responsive ── */
 @media (max-width: 500px) {
