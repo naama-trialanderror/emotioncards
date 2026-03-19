@@ -125,26 +125,6 @@ input, textarea { font-family: var(--font); direction: rtl; }
   font-weight: 300;
 }
 
-/* Branding block in landing hero */
-.landing-brand {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 4px;
-}
-.landing-brand-link {
-  display: inline-flex;
-  align-items: center;
-  opacity: .75;
-  transition: opacity var(--t);
-}
-.landing-brand-link:hover { opacity: 1; }
-.landing-brand-logo {
-  height: 52px;
-  width: auto;
-  object-fit: contain;
-  display: block;
-}
 
 /* Cards row */
 .landing-options {
@@ -1126,7 +1106,7 @@ input, textarea { font-family: var(--font); direction: rtl; }
   background: rgba(255,255,255,.95);
   backdrop-filter: blur(8px);
   border-top: 1px solid var(--border);
-  padding: 8px 20px;
+  padding: 10px 20px;
 }
 .brand-footer-link {
   display: flex;
@@ -1143,15 +1123,15 @@ input, textarea { font-family: var(--font); direction: rtl; }
 .brand-footer-link:hover { opacity: 1; }
 .brand-footer-link strong { font-weight: 600; color: var(--text); }
 .brand-footer-logo {
-  height: 22px;
+  height: 38px;
   width: auto;
   object-fit: contain;
   display: block;
 }
 
 /* Add bottom padding to non-game screens so footer doesn't overlap */
-#screen-landing  { padding-bottom: 48px; }
-#screen-settings { padding-bottom: 48px; }
+#screen-landing  { padding-bottom: 70px; }
+#screen-settings { padding-bottom: 70px; }
 
 /* ── Responsive ── */
 @media (max-width: 500px) {
