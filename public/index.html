@@ -6,7 +6,7 @@
   <title>קלפים מדברים</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='white'/></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -335,6 +335,26 @@
 
     <div class="fp-end-area" id="fp-end-area">
       <button id="btn-fp-end" class="btn btn-ghost btn-small">סיום שיחה ✕</button>
+    </div>
+
+    <!-- Note modal -->
+    <div id="fp-note-modal" class="fp-note-modal hidden">
+      <div class="fp-note-dialog" id="fp-note-dialog">
+        <p class="fp-note-dialog-title">פתק על הקלף</p>
+        <div class="fp-note-colors">
+          <button class="fp-note-color active" data-color="#fff9c4" style="background:#fff9c4" title="צהוב"></button>
+          <button class="fp-note-color" data-color="#ffd6d6" style="background:#ffd6d6" title="ורוד"></button>
+          <button class="fp-note-color" data-color="#d6f5d6" style="background:#d6f5d6" title="ירוק"></button>
+          <button class="fp-note-color" data-color="#d6e8ff" style="background:#d6e8ff" title="כחול"></button>
+          <button class="fp-note-color" data-color="#f5d6ff" style="background:#f5d6ff" title="סגול"></button>
+        </div>
+        <textarea id="fp-note-text" class="fp-note-textarea" placeholder="כתוב/י כאן..." rows="4" maxlength="120"></textarea>
+        <div class="fp-note-actions">
+          <button id="fp-note-save" class="btn btn-primary btn-small">שמור</button>
+          <button id="fp-note-cancel" class="btn btn-secondary btn-small">ביטול</button>
+          <button id="fp-note-delete" class="btn btn-ghost btn-small">מחק פתק</button>
+        </div>
+      </div>
     </div>
 
     <!-- Card zoom modal -->

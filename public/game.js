@@ -954,10 +954,12 @@ function renderFreePlay(room) {
   document.getElementById('fp-table-count').textContent = `(${tableCards.length}/4)`;
   document.getElementById('fp-table-empty').style.display = tableCards.length ? 'none' : '';
 
+  const tableNotes = room.tableNotes || {};
   const tableEl = document.getElementById('fp-table-cards');
   tableEl.innerHTML = '';
   tableCards.forEach(cardId => {
-    const el = fpBuildCard(cardId, 'אסוף לידיים שלי', () => fpTakeFromTable(cardId));
+    const noteData = tableNotes[cardId] || null;
+    const el = fpBuildCard(cardId, 'אסוף לידיים שלי', () => fpTakeFromTable(cardId), noteData, true);
     tableEl.appendChild(el);
   });
 
@@ -983,10 +985,9 @@ function renderFreePlay(room) {
   document.getElementById('fp-end-area').style.display = myRole === 'therapist' ? '' : 'none';
 }
 
-function fpBuildCard(cardId, btnText, onClick) {
+function fpBuildCard(cardId, btnText, onClick, noteData = null, isTableCard = false) {
   const div = document.createElement('div');
   div.className = 'fp-card';
-  div.style.cursor = 'zoom-in';
   div.addEventListener('click', () => fpShowCardModal(cardId));
 
   const img = document.createElement('img');
@@ -994,6 +995,33 @@ function fpBuildCard(cardId, btnText, onClick) {
   img.alt = `קלף ${cardId}`;
   img.onerror = () => img.remove();
   div.appendChild(img);
+
+  // Zoom icon (always visible, discoverable on mobile)
+  const zoomBtn = document.createElement('button');
+  zoomBtn.className = 'fp-zoom-btn';
+  zoomBtn.title = 'הגדל';
+  zoomBtn.textContent = '🔍';
+  zoomBtn.addEventListener('click', e => { e.stopPropagation(); fpShowCardModal(cardId); });
+  div.appendChild(zoomBtn);
+
+  // Note overlay (if note exists)
+  if (noteData) {
+    const noteEl = document.createElement('div');
+    noteEl.className = 'fp-note-overlay';
+    noteEl.style.background = noteData.color;
+    noteEl.textContent = noteData.text;
+    div.appendChild(noteEl);
+  }
+
+  // Note button (table cards only)
+  if (isTableCard) {
+    const noteBtn = document.createElement('button');
+    noteBtn.className = 'fp-card-note-btn' + (noteData ? ' fp-card-note-btn--has-note' : '');
+    noteBtn.title = noteData ? 'ערוך פתק' : 'הוסף פתק';
+    noteBtn.textContent = noteData ? '✏️' : '📝';
+    noteBtn.addEventListener('click', e => { e.stopPropagation(); fpOpenNoteModal(cardId, noteData); });
+    div.appendChild(noteBtn);
+  }
 
   const btn = document.createElement('button');
   btn.className = 'fp-card-btn';
@@ -1058,11 +1086,14 @@ async function fpTakeFromTable(cardId) {
   const myCountKey = myRole === 'therapist' ? 'therapistHandCount' : 'childHandCount';
   const myHand     = toHandCards(room[myHandKey]);
 
-  await update(ref(db, `rooms/${roomCode}`), {
-    tableCards:      tableCards.filter(id => id !== cardId),
-    [myHandKey]:     [...myHand, cardId],
-    [myCountKey]:    myHand.length + 1,
-  });
+  const updates = {
+    tableCards:   tableCards.filter(id => id !== cardId),
+    [myHandKey]:  [...myHand, cardId],
+    [myCountKey]: myHand.length + 1,
+  };
+  if (room.tableNotes?.[cardId]) updates[`tableNotes/${cardId}`] = null;
+
+  await update(ref(db, `rooms/${roomCode}`), updates);
 }
 
 async function fpPlaceOnTable(cardId) {
@@ -1080,6 +1111,59 @@ async function fpPlaceOnTable(cardId) {
     [myCountKey]: myHand.length - 1,
   });
 }
+
+// ── Note modal ────────────────────────────────────────
+
+let fpCurrentNoteCardId = null;
+let fpCurrentNoteColor  = '#fff9c4';
+
+function fpOpenNoteModal(cardId, existingNote) {
+  fpCurrentNoteCardId = cardId;
+  fpCurrentNoteColor  = existingNote?.color || '#fff9c4';
+
+  document.getElementById('fp-note-text').value = existingNote?.text || '';
+  document.getElementById('fp-note-delete').style.display = existingNote ? '' : 'none';
+  document.getElementById('fp-note-dialog').style.background = fpCurrentNoteColor;
+
+  document.querySelectorAll('.fp-note-color').forEach(el => {
+    el.classList.toggle('active', el.dataset.color === fpCurrentNoteColor);
+  });
+
+  document.getElementById('fp-note-modal').classList.remove('hidden');
+  document.getElementById('fp-note-text').focus();
+}
+
+async function fpSaveNote() {
+  const text = document.getElementById('fp-note-text').value.trim();
+  if (!text || !fpCurrentNoteCardId) return;
+  await update(ref(db, `rooms/${roomCode}/tableNotes`), {
+    [fpCurrentNoteCardId]: { text, color: fpCurrentNoteColor },
+  });
+  document.getElementById('fp-note-modal').classList.add('hidden');
+}
+
+async function fpDeleteNote() {
+  if (!fpCurrentNoteCardId) return;
+  await update(ref(db, `rooms/${roomCode}`), {
+    [`tableNotes/${fpCurrentNoteCardId}`]: null,
+  });
+  document.getElementById('fp-note-modal').classList.add('hidden');
+}
+
+document.getElementById('fp-note-save').addEventListener('click', fpSaveNote);
+document.getElementById('fp-note-cancel').addEventListener('click', () => {
+  document.getElementById('fp-note-modal').classList.add('hidden');
+});
+document.getElementById('fp-note-delete').addEventListener('click', fpDeleteNote);
+
+document.querySelectorAll('.fp-note-color').forEach(el => {
+  el.addEventListener('click', () => {
+    fpCurrentNoteColor = el.dataset.color;
+    document.getElementById('fp-note-dialog').style.background = fpCurrentNoteColor;
+    document.querySelectorAll('.fp-note-color').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+  });
+});
 
 // ── Event listeners ───────────────────────────────────
 
