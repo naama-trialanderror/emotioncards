@@ -79,25 +79,24 @@
   <div id="screen-lobby" class="screen">
     <div class="lobby-wrap">
 
-      <!-- Share section — therapist only -->
-      <div id="lobby-share-section">
-        <p class="lobby-label">שיתוף עם המטופל</p>
-        <div class="lobby-code-box">
-          <span id="display-code" class="lobby-code">-----</span>
-        </div>
-        <div class="lobby-share-btns">
-          <button id="btn-copy-code" class="btn btn-secondary btn-small">📋 העתק קוד</button>
-          <button id="btn-copy-link" class="btn btn-secondary btn-small">🔗 העתק לינק</button>
-        </div>
-      </div>
-
-      <!-- Instructions — therapist only -->
-      <div id="lobby-instructions" class="lobby-instructions">
-        <p class="lobby-instructions-title">איך מתחילים?</p>
+      <!-- Instructions + sharing — therapist only -->
+      <div id="lobby-instructions" class="lobby-instructions hidden">
         <ol class="lobby-steps">
-          <li>שלח/י למטופל את הקוד או הלינק</li>
-          <li>המטופל נכנס לאתר ומקליד את הקוד</li>
-          <li>כשהמטופל מחובר — לחץ/י "התחל משחק"</li>
+          <li>
+            <span class="lobby-step-label">שלח/י למטופל את הלינק:</span>
+            <div class="lobby-step-row">
+              <span id="lobby-link-display" class="lobby-link-text"></span>
+              <button id="btn-copy-link" class="btn btn-secondary btn-small">📋 העתק</button>
+            </div>
+          </li>
+          <li>
+            <span class="lobby-step-label">או שלח/י את הקוד — בקש/י ממנו להיכנס לאתר ולהזין:</span>
+            <div class="lobby-step-row">
+              <span id="display-code" class="lobby-code">-----</span>
+              <button id="btn-copy-code" class="btn btn-secondary btn-small">📋 העתק</button>
+            </div>
+          </li>
+          <li class="lobby-step-last">כשהמטופל מתחבר — לחץ/י "התחל משחק" למטה</li>
         </ol>
       </div>
 

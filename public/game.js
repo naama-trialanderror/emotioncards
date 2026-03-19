@@ -532,10 +532,11 @@ function renderLobby(room) {
   showScreen('screen-lobby');
   if (myRole === 'therapist') {
     document.getElementById('therapist-lobby-controls').classList.remove('hidden');
-    document.getElementById('lobby-share-section').classList.remove('hidden');
     document.getElementById('lobby-instructions').classList.remove('hidden');
+    document.getElementById('lobby-link-display').textContent =
+      `${location.origin}/?join=${roomCode}`;
     if (room.childConnected) {
-      document.getElementById('lobby-status-text').textContent = `${room.childName} הצטרף/ה! 🎉`;
+      document.getElementById('lobby-status-text').textContent = `${room.childName} מחובר/ת! 🎉`;
       document.getElementById('lobby-spinner').classList.add('hidden');
       document.getElementById('btn-start').classList.remove('hidden');
       document.getElementById('btn-start-solo').classList.add('hidden');
@@ -546,7 +547,6 @@ function renderLobby(room) {
       document.getElementById('btn-start-solo').classList.remove('hidden');
     }
   } else {
-    document.getElementById('lobby-share-section').classList.add('hidden');
     document.getElementById('lobby-instructions').classList.add('hidden');
   }
 }
