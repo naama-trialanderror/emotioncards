@@ -807,10 +807,16 @@ function renderCards(room, isActive) {
 
         if (pendingCard === cardId) {
           card.classList.add(room.phase === 'choosing' ? 'pending-choose' : 'pending-guess');
+          // Wrap card + hint below it (not inside card where it overlaps image)
+          const wrap = document.createElement('div');
+          wrap.className = 'pending-card-wrap';
           const hint = document.createElement('div');
-          hint.className = 'card-confirm-hint';
+          hint.className = `card-confirm-hint ${room.phase === 'guessing' ? 'card-confirm-hint--guess' : ''}`;
           hint.textContent = 'לחץ/י שוב לאישור';
-          card.appendChild(hint);
+          wrap.appendChild(card);
+          wrap.appendChild(hint);
+          container.appendChild(wrap);
+          return;
         } else if (pendingCard !== null) {
           card.classList.add('pending-dimmed');
         } else {
@@ -921,9 +927,15 @@ function renderActions(room, isActive) {
 
   } else if (room.phase === 'reveal') {
     const correct = room.secretChoice === room.guess;
-    const resultText = correct
-      ? `${guesserName} ניחש/ה נכון!`
-      : `לא נוחש — ${activeName} קיבל/ה 3 נקודות`;
+    // Personalized per player: guesser (!isActive) sees first-person, chooser sees third-person
+    let resultText;
+    if (correct) {
+      resultText = !isActive ? `ניחשת נכון! 🎉` : `${guesserName} ניחש/ה נכון! 🎉`;
+    } else {
+      resultText = !isActive
+        ? `לא ניחשת — ${activeName} מקבל/ת 3 נקודות`
+        : `לא נוחש — קיבלת 3 נקודות`;
+    }
 
     const revealDiv = document.createElement('div');
     revealDiv.className = 'action-reveal';

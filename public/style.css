@@ -493,7 +493,8 @@ input, textarea { font-family: var(--font); direction: rtl; }
   bottom: 0;
   background: var(--bg);
   border-top: 1px solid var(--border);
-  padding: 14px 24px 20px;
+  box-shadow: 0 -4px 16px rgba(24,19,14,.08);
+  padding: 14px 24px 24px;
   z-index: 10;
   display: flex;
   justify-content: center;
@@ -1180,25 +1181,30 @@ input, textarea { font-family: var(--font); direction: rtl; }
   filter: grayscale(15%);
   pointer-events: none;
 }
+/* Pending card + hint wrapper */
+.pending-card-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
 .card-confirm-hint {
-  position: absolute;
-  bottom: 26px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(109,63,214,.92);
+  background: #6d3fd6;
   color: #fff;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  padding: 5px 14px;
+  padding: 6px 18px;
   border-radius: var(--r-full);
   white-space: nowrap;
-  z-index: 20;
   pointer-events: none;
   font-family: var(--font);
   letter-spacing: .03em;
+  box-shadow: 0 2px 8px rgba(109,63,214,.35);
 }
-.card.pending-guess .card-confirm-hint {
-  background: rgba(212,144,10,.92);
+.card-confirm-hint--guess {
+  background: #d4900a;
+  box-shadow: 0 2px 8px rgba(212,144,10,.35);
 }
 
 /* Chosen card — visible to chooser during guessing phase */
@@ -1207,15 +1213,15 @@ input, textarea { font-family: var(--font); direction: rtl; }
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  background: var(--accent-light);
-  border: 2px solid rgba(200,98,74,.3);
+  background: #eff6ff;
+  border: 2px solid rgba(59,130,246,.3);
   border-radius: var(--r-xl);
   padding: 10px 12px 12px;
 }
 .chosen-card-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--accent);
+  color: #2563a8;
   letter-spacing: .04em;
 }
 
