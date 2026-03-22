@@ -290,13 +290,11 @@
             <div class="mode-card-title">חפיסת קלפים</div>
             <div class="mode-card-desc">עיון חופשי — הניחו קלפים על השולחן ושוחחו עליהם בלי תורות ובלי ניקוד</div>
           </div>
-          <div class="mode-card mode-card--soon" data-mode="shared-story">
-            <span class="mode-card-soon-badge">בקרוב</span>
+          <div class="mode-card" data-mode="shared-story">
             <div class="mode-card-title">סיפור משותף</div>
             <div class="mode-card-desc">שני השחקנים מגרילים קלפים ובונים יחד סיפור — כל אחד בתורו מניח קלף וכותב משפט</div>
           </div>
-          <div class="mode-card mode-card--soon" data-mode="story-contest">
-            <span class="mode-card-soon-badge">בקרוב</span>
+          <div class="mode-card" data-mode="story-contest">
             <div class="mode-card-title">תחרות סיפורים</div>
             <div class="mode-card-desc">כל אחד מסדר את אותם הקלפים בסדר שלו ויוצר סיפור — בסוף משווים</div>
           </div>
@@ -457,6 +455,30 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════ SHARED STORY ══════════════════════════════ -->
+  <div id="screen-shared-story" class="screen">
+    <header class="ss-header">
+      <div class="ss-player-block">
+        <span id="ss-name-therapist" class="ss-player-name">מנהל.ת</span>
+      </div>
+      <span class="ss-header-title">סיפור משותף</span>
+      <div class="ss-player-block">
+        <span id="ss-name-child" class="ss-player-name">שחקנ.ית</span>
+      </div>
+    </header>
+    <div id="ss-story-area" class="ss-story-area"></div>
+    <div id="ss-action-area" class="ss-action-area"></div>
+  </div>
+
+  <!-- ══════════════════════════════ STORY CONTEST ══════════════════════════════ -->
+  <div id="screen-story-contest" class="screen">
+    <header class="sc-header">
+      <span class="sc-header-title">תחרות סיפורים</span>
+      <span id="sc-status" class="sc-status"></span>
+    </header>
+    <div id="sc-content" class="sc-content"></div>
+  </div>
+
   <!-- Hidden cards manager overlay -->
   <div id="hidden-cards-overlay" class="card-browser-overlay hidden">
     <div class="card-browser-box">
@@ -469,6 +491,6 @@
     </div>
   </div>
 
-  <script type="module" src="game.js?v=16"></script>
+  <script type="module" src="game.js?v=17"></script>
 </body>
 </html>

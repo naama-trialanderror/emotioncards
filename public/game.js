@@ -114,6 +114,9 @@ let selectedChoiceMode = false;   // when true + mode='fixed', effective Firebas
 
 let pendingCard = null;  // local pending selection (not synced to Firebase)
 let prevPhase   = null;  // track phase changes to reset pending
+let ssSelectedCardId = null;  // shared story: locally selected card
+let scMyOrder = [];           // story contest: local card order
+let scMySentences = {};       // story contest: local sentences
 
 // ── Helpers ───────────────────────────────────────────
 
@@ -152,6 +155,15 @@ function toCards(val) {
   if (!val) return [];
   if (Array.isArray(val)) return val;
   return Object.values(val).map(Number);
+}
+
+function toStoryLine(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.filter(Boolean);
+  return Object.entries(val)
+    .sort(([a], [b]) => parseInt(a) - parseInt(b))
+    .map(([, v]) => v)
+    .filter(Boolean);
 }
 
 // ── Screen management ─────────────────────────────────
@@ -198,8 +210,7 @@ function loadManagerSettings() {
     if (s.name) document.getElementById('therapist-name').value = s.name;
     if (s.mode) {
       const isChoice = s.mode === 'choice';
-      const isSoon = ['shared-story', 'story-contest'].includes(s.mode);
-      selectedMode = isChoice ? 'fixed' : (isSoon ? 'fixed' : s.mode);
+      selectedMode = isChoice ? 'fixed' : s.mode;
       selectedChoiceMode = isChoice;
       document.querySelectorAll('.mode-card[data-mode]').forEach(c =>
         c.classList.toggle('selected', c.dataset.mode === selectedMode));
@@ -648,8 +659,10 @@ document.getElementById('btn-start').addEventListener('click', async () => {
   if (!room.childConnected) return showError('ממתינים לשחקן השני.');
   if (room.gameMode === 'free-play') {
     writeNewFreePlayGame();
-  } else if (room.gameMode === 'shared-story' || room.gameMode === 'story-contest') {
-    showError('מצב זה בפיתוח — יגיע בקרוב!');
+  } else if (room.gameMode === 'shared-story') {
+    writeNewSharedStoryGame(room);
+  } else if (room.gameMode === 'story-contest') {
+    writeNewStoryContestGame(room);
   } else {
     writeNewRound(room, 'therapist', 1);
   }
@@ -729,6 +742,9 @@ function render(room) {
   // Reset pending selection when phase changes
   if (room.phase !== prevPhase) {
     pendingCard = null;
+    ssSelectedCardId = null;
+    scMyOrder = [];
+    scMySentences = {};
     prevPhase = room.phase;
   }
   document.getElementById('btn-next-round-top').classList.add('hidden');
@@ -743,6 +759,8 @@ function render(room) {
   if (room.phase === 'lobby') { renderLobby(room); return; }
   if (room.phase === 'choosing-prompt') { renderChoosePrompt(room, isActive); return; }
   if (room.phase === 'free-play') { renderFreePlay(room); return; }
+  if (room.phase === 'shared-story') { renderSharedStory(room); return; }
+  if (room.phase === 'story-contest') { renderStoryContest(room); return; }
   showScreen('screen-game');
   document.getElementById('prompt-options-area').classList.add('hidden');
   document.getElementById('solo-badge').classList.toggle('hidden', !room.solo);
@@ -1408,6 +1426,376 @@ async function writeNewFreePlayGame() {
     therapistHandCount: 0,
     childHandCount:     0,
   });
+}
+
+// ── Start shared-story ────────────────────────────────
+
+async function writeNewSharedStoryGame(room) {
+  const cardsPerPlayer = Math.min(room.cardsPerRound || 3, 5);
+  const hidden = getHiddenCards();
+  const pool = shuffle(
+    Array.from({ length: TOTAL_CARDS }, (_, i) => i + 1).filter(c => !hidden.includes(c))
+  );
+  const therapistHand = pool.slice(0, cardsPerPlayer);
+  const childHand = pool.slice(cardsPerPlayer, cardsPerPlayer * 2);
+  await update(ref(db, `rooms/${roomCode}`), {
+    phase: 'shared-story',
+    activePlayer: 'therapist',
+    round: 1,
+    therapistHand,
+    childHand,
+    therapistHandCount: cardsPerPlayer,
+    childHandCount: cardsPerPlayer,
+    storyLine: [],
+    maxTurns: cardsPerPlayer * 2,
+  });
+}
+
+// ── Render shared-story ───────────────────────────────
+
+function renderSharedStory(room) {
+  showScreen('screen-shared-story');
+  document.getElementById('ss-name-therapist').textContent = room.therapistName || 'מנהל.ת';
+  document.getElementById('ss-name-child').textContent = room.childName || 'שחקנ.ית';
+
+  const storyLine = toStoryLine(room.storyLine);
+  const maxTurns = room.maxTurns || 6;
+  const isDone = storyLine.length >= maxTurns;
+  const isActive = myRole === room.activePlayer;
+
+  // Render story so far
+  const storyEl = document.getElementById('ss-story-area');
+  storyEl.innerHTML = '';
+  if (storyLine.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'ss-empty-hint';
+    empty.textContent = 'הסיפור מתחיל כאן...';
+    storyEl.appendChild(empty);
+  }
+  storyLine.forEach(entry => {
+    const item = document.createElement('div');
+    item.className = 'ss-story-item';
+    const img = document.createElement('img');
+    img.src = `/cards/card_${String(entry.cardId).padStart(2, '0')}.png`;
+    img.className = 'ss-story-card-img';
+    const textBlock = document.createElement('div');
+    textBlock.className = 'ss-story-text-block';
+    const author = document.createElement('span');
+    author.className = 'ss-story-author';
+    author.textContent = entry.authorName + ':';
+    const sentence = document.createElement('span');
+    sentence.className = 'ss-story-sentence';
+    sentence.textContent = entry.sentence;
+    textBlock.appendChild(author);
+    textBlock.appendChild(sentence);
+    item.appendChild(img);
+    item.appendChild(textBlock);
+    storyEl.appendChild(item);
+  });
+
+  // Action area
+  const actionEl = document.getElementById('ss-action-area');
+  actionEl.innerHTML = '';
+
+  if (isDone) {
+    const doneMsg = document.createElement('div');
+    doneMsg.className = 'ss-done-msg';
+    doneMsg.textContent = '🎉 הסיפור הושלם!';
+    actionEl.appendChild(doneMsg);
+    if (myRole === 'therapist') {
+      const endBtn = document.createElement('button');
+      endBtn.className = 'btn btn-primary';
+      endBtn.textContent = 'סיום משחק';
+      endBtn.addEventListener('click', () => { clearSession(); location.reload(); });
+      actionEl.appendChild(endBtn);
+    }
+    return;
+  }
+
+  if (isActive) {
+    const myHandKey = myRole === 'therapist' ? 'therapistHand' : 'childHand';
+    const myHand = toHandCards(room[myHandKey]);
+
+    const turnMsg = document.createElement('div');
+    turnMsg.className = 'ss-turn-msg';
+    turnMsg.textContent = 'התור שלך — בחר קלף לסיפור';
+    actionEl.appendChild(turnMsg);
+
+    const handRow = document.createElement('div');
+    handRow.className = 'ss-hand-row';
+    myHand.forEach(cardId => {
+      const card = buildCard(cardId);
+      card.classList.add('selectable');
+      card.classList.toggle('selected', ssSelectedCardId === cardId);
+      card.addEventListener('click', () => ssSelectCard(cardId));
+      handRow.appendChild(card);
+    });
+    actionEl.appendChild(handRow);
+
+    // Sentence input (visible only when card selected)
+    const inputArea = document.createElement('div');
+    inputArea.className = 'ss-input-area' + (ssSelectedCardId ? '' : ' hidden');
+    inputArea.id = 'ss-input-area';
+
+    const textarea = document.createElement('textarea');
+    textarea.id = 'ss-sentence-input';
+    textarea.className = 'ss-textarea';
+    textarea.placeholder = 'כתוב.י משפט לסיפור...';
+    textarea.maxLength = 150;
+    textarea.rows = 2;
+
+    const submitBtn = document.createElement('button');
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.textContent = '← הוסף לסיפור';
+    submitBtn.addEventListener('click', () => ssSubmitCard(room, storyLine));
+
+    inputArea.appendChild(textarea);
+    inputArea.appendChild(submitBtn);
+    actionEl.appendChild(inputArea);
+
+    if (ssSelectedCardId) {
+      setTimeout(() => document.getElementById('ss-sentence-input')?.focus(), 50);
+    }
+  } else {
+    const activeName = room.activePlayer === 'therapist' ? room.therapistName : room.childName;
+    const waitDiv = document.createElement('div');
+    waitDiv.className = 'ss-waiting';
+    waitDiv.innerHTML = `<div class="spinner small"></div><span>ממתינים ל${activeName} לבחור קלף...</span>`;
+    actionEl.appendChild(waitDiv);
+  }
+}
+
+function ssSelectCard(cardId) {
+  ssSelectedCardId = cardId;
+  // Re-highlight cards in DOM (without full re-render)
+  document.querySelectorAll('.ss-hand-row .card').forEach(c => {
+    c.classList.toggle('selected', parseInt(c.dataset.id) === cardId);
+  });
+  const inputArea = document.getElementById('ss-input-area');
+  if (inputArea) {
+    inputArea.classList.remove('hidden');
+    document.getElementById('ss-sentence-input')?.focus();
+  }
+}
+
+async function ssSubmitCard(room, storyLine) {
+  if (!ssSelectedCardId) return;
+  const sentenceEl = document.getElementById('ss-sentence-input');
+  const sentence = sentenceEl ? sentenceEl.value.trim() : '';
+  if (!sentence) {
+    sentenceEl?.focus();
+    return;
+  }
+  const myHandKey = myRole === 'therapist' ? 'therapistHand' : 'childHand';
+  const myCountKey = myRole === 'therapist' ? 'therapistHandCount' : 'childHandCount';
+  const myHand = toHandCards(room[myHandKey]).filter(id => id !== ssSelectedCardId);
+  const myName = myRole === 'therapist' ? room.therapistName : room.childName;
+  const nextPlayer = room.activePlayer === 'therapist' ? 'child' : 'therapist';
+  const newIndex = storyLine.length;
+  const cardId = ssSelectedCardId;
+  ssSelectedCardId = null;
+  await update(ref(db, `rooms/${roomCode}`), {
+    [`storyLine/${newIndex}`]: { cardId, authorRole: myRole, authorName: myName, sentence },
+    [myHandKey]: myHand,
+    [myCountKey]: myHand.length,
+    activePlayer: nextPlayer,
+    round: room.round + 1,
+  });
+}
+
+// ── Start story-contest ───────────────────────────────
+
+async function writeNewStoryContestGame(room) {
+  const count = Math.min(room.cardsPerRound || 5, 6);
+  const hidden = getHiddenCards();
+  const pool = shuffle(
+    Array.from({ length: TOTAL_CARDS }, (_, i) => i + 1).filter(c => !hidden.includes(c))
+  );
+  const cards = pool.slice(0, count);
+  await update(ref(db, `rooms/${roomCode}`), {
+    phase: 'story-contest',
+    cards,
+    therapistOrder: [],
+    childOrder: [],
+    therapistSentences: {},
+    childSentences: {},
+    therapistDone: false,
+    childDone: false,
+  });
+}
+
+// ── Render story-contest ──────────────────────────────
+
+function renderStoryContest(room) {
+  showScreen('screen-story-contest');
+  const cards = toCards(room.cards);
+  const myDoneKey = myRole === 'therapist' ? 'therapistDone' : 'childDone';
+  const otherDoneKey = myRole === 'therapist' ? 'childDone' : 'therapistDone';
+  const otherName = myRole === 'therapist' ? room.childName : room.therapistName;
+  const myDone = room[myDoneKey];
+  const otherDone = room[otherDoneKey];
+  const bothDone = room.therapistDone && room.childDone;
+
+  const statusEl = document.getElementById('sc-status');
+  statusEl.textContent = bothDone
+    ? 'שניכם סיימתם! 🎉'
+    : (myDone ? `ממתינים ל${otherName}...` : (otherDone ? `${otherName} סיים.ה ✓` : ''));
+
+  const content = document.getElementById('sc-content');
+  content.innerHTML = '';
+
+  if (bothDone) {
+    renderStoryContestReveal(room, content);
+    return;
+  }
+
+  if (myDone) {
+    const waitDiv = document.createElement('div');
+    waitDiv.className = 'sc-waiting';
+    waitDiv.innerHTML = `<div class="spinner small"></div><span>ממתינים ל${otherName} לסיים...</span>`;
+    content.appendChild(waitDiv);
+    return;
+  }
+
+  // Available cards (not yet in scMyOrder)
+  const available = cards.filter(id => !scMyOrder.includes(id));
+
+  const availHeader = document.createElement('p');
+  availHeader.className = 'sc-section-title';
+  availHeader.textContent = available.length > 0
+    ? 'בחר.י קלפים לפי הסדר שבו תרצה לספר את הסיפור'
+    : 'כל הקלפים סודרו ✓';
+  content.appendChild(availHeader);
+
+  if (available.length > 0) {
+    const availRow = document.createElement('div');
+    availRow.className = 'sc-available-row';
+    available.forEach(cardId => {
+      const card = buildCard(cardId);
+      card.classList.add('selectable');
+      card.addEventListener('click', () => {
+        scMyOrder = [...scMyOrder, cardId];
+        renderStoryContest(room);
+      });
+      availRow.appendChild(card);
+    });
+    content.appendChild(availRow);
+  }
+
+  if (scMyOrder.length > 0) {
+    const storyHeader = document.createElement('p');
+    storyHeader.className = 'sc-section-title';
+    storyHeader.textContent = 'הסיפור שלך';
+    content.appendChild(storyHeader);
+
+    scMyOrder.forEach((cardId, idx) => {
+      const row = document.createElement('div');
+      row.className = 'sc-story-row';
+
+      const numEl = document.createElement('span');
+      numEl.className = 'sc-story-num';
+      numEl.textContent = `${idx + 1}`;
+
+      const cardImg = document.createElement('img');
+      cardImg.src = `/cards/card_${String(cardId).padStart(2, '0')}.png`;
+      cardImg.className = 'sc-story-card-img';
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'sc-remove-btn';
+      removeBtn.textContent = '✕';
+      removeBtn.title = 'הסרה מהסיפור';
+      removeBtn.addEventListener('click', () => {
+        scMyOrder = scMyOrder.filter(id => id !== cardId);
+        delete scMySentences[cardId];
+        renderStoryContest(room);
+      });
+
+      const textarea = document.createElement('textarea');
+      textarea.className = 'sc-sentence-input';
+      textarea.placeholder = 'כתוב.י משפט...';
+      textarea.maxLength = 150;
+      textarea.rows = 2;
+      textarea.value = scMySentences[cardId] || '';
+      textarea.addEventListener('input', () => {
+        scMySentences[cardId] = textarea.value;
+      });
+
+      row.appendChild(numEl);
+      row.appendChild(cardImg);
+      row.appendChild(removeBtn);
+      row.appendChild(textarea);
+      content.appendChild(row);
+    });
+  }
+
+  const allPlaced = scMyOrder.length === cards.length;
+  const allFilled = allPlaced && scMyOrder.every(id => (scMySentences[id] || '').trim());
+  const doneBtn = document.createElement('button');
+  doneBtn.className = 'btn btn-primary sc-done-btn';
+  doneBtn.textContent = 'סיימתי ✓';
+  doneBtn.disabled = !allFilled;
+  doneBtn.addEventListener('click', () => scSubmitStory(room));
+  content.appendChild(doneBtn);
+}
+
+async function scSubmitStory(room) {
+  const myOrderKey = myRole === 'therapist' ? 'therapistOrder' : 'childOrder';
+  const mySentencesKey = myRole === 'therapist' ? 'therapistSentences' : 'childSentences';
+  const myDoneKey = myRole === 'therapist' ? 'therapistDone' : 'childDone';
+  await update(ref(db, `rooms/${roomCode}`), {
+    [myOrderKey]: scMyOrder,
+    [mySentencesKey]: scMySentences,
+    [myDoneKey]: true,
+  });
+}
+
+function renderStoryContestReveal(room, container) {
+  const therapistOrder = toCards(room.therapistOrder);
+  const childOrder = toCards(room.childOrder);
+  const therapistSentences = room.therapistSentences || {};
+  const childSentences = room.childSentences || {};
+
+  const colsWrap = document.createElement('div');
+  colsWrap.className = 'sc-reveal-cols';
+
+  [
+    { name: room.therapistName, order: therapistOrder, sentences: therapistSentences },
+    { name: room.childName, order: childOrder, sentences: childSentences },
+  ].forEach(({ name, order, sentences }) => {
+    const col = document.createElement('div');
+    col.className = 'sc-reveal-col';
+
+    const nameEl = document.createElement('h4');
+    nameEl.className = 'sc-reveal-name';
+    nameEl.textContent = name;
+    col.appendChild(nameEl);
+
+    order.forEach((cardId, idx) => {
+      const item = document.createElement('div');
+      item.className = 'sc-reveal-item';
+      const img = document.createElement('img');
+      img.src = `/cards/card_${String(cardId).padStart(2, '0')}.png`;
+      img.className = 'sc-reveal-card-img';
+      const text = document.createElement('div');
+      text.className = 'sc-reveal-text';
+      text.textContent = `${idx + 1}. ${sentences[cardId] || ''}`;
+      item.appendChild(img);
+      item.appendChild(text);
+      col.appendChild(item);
+    });
+
+    colsWrap.appendChild(col);
+  });
+
+  container.appendChild(colsWrap);
+
+  if (myRole === 'therapist') {
+    const endBtn = document.createElement('button');
+    endBtn.className = 'btn btn-primary sc-end-btn';
+    endBtn.textContent = 'סיום משחק';
+    endBtn.addEventListener('click', () => { clearSession(); location.reload(); });
+    container.appendChild(endBtn);
+  }
 }
 
 // ── Render ────────────────────────────────────────────
