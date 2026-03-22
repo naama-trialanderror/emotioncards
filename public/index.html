@@ -51,12 +51,12 @@
       </div>
 
       <div class="landing-form-wrap">
-        <h2 class="landing-form-title">התחל.י משחק חדש</h2>
+        <h2 class="landing-form-title">התחלת משחק חדש</h2>
         <input type="text" id="therapist-name" class="input" placeholder="מנהל.ת משחק"
                maxlength="20" autocomplete="off">
         <p id="error-manager" class="input-error hidden">נא להזין שם</p>
         <button id="btn-go-settings" class="btn btn-primary btn-lg">הגדרות ויצירה ◀</button>
-        <p class="landing-flow-hint">לאחר ההגדרות תקבל.י לינק לשלוח לשחקנ.ית — היא תיכנס ישירות לחדר</p>
+        <p class="landing-flow-hint">לאחר ההגדרות יופיע לינק לשיתוף — השחקנ.ית תיכנס דרכו ישירות לחדר</p>
       </div>
     </div>
 
@@ -117,14 +117,14 @@
       <!-- Instructions + sharing — manager only -->
       <div id="lobby-instructions" class="lobby-instructions hidden">
 
-        <p class="lobby-share-title">שלח/י לשחקנ.ית את הלינק למשחק:</p>
+        <p class="lobby-share-title">לינק לשיתוף עם השחקנ.ית:</p>
 
         <div class="lobby-step-row">
           <span id="lobby-link-display" class="lobby-link-text"></span>
           <button id="btn-copy-link" class="btn btn-primary btn-small">📋 העתק לינק</button>
         </div>
 
-        <p class="lobby-share-hint">כשהשחקנ.ית מתחבר.ת — לחץ/י "התחל משחק" למטה</p>
+        <p class="lobby-share-hint">כשהשחקנ.ית תתחבר — לחצו "התחל משחק" למטה</p>
 
         <!-- hidden — kept for JS compatibility -->
         <span id="display-code" style="display:none"></span>
@@ -144,7 +144,7 @@
 
       <!-- Player waiting message -->
       <div id="child-lobby-msg" class="hidden lobby-child-wait">
-        <p>מחכים למנהל.ת המשחק להתחיל...</p>
+        <p>ממתינים למנהל.ת המשחק...</p>
       </div>
 
     </div>
@@ -257,7 +257,7 @@
     <div id="disconnect-overlay" class="overlay hidden">
       <div class="overlay-box">
         <p class="overlay-emoji">😔</p>
-        <p id="disconnect-msg">השחקנ.ית התנתק.ה</p>
+        <p id="disconnect-msg">חיבור השחקנ.ית נותק</p>
         <button onclick="sessionStorage.removeItem('gameSession'); location.reload()" class="btn btn-primary">חזור לדף הבית</button>
       </div>
     </div>
@@ -286,15 +286,15 @@
           </div>
           <div class="mode-card" data-mode="story-contest">
             <div class="mode-card-title">תחרות סיפורים</div>
-            <div class="mode-card-desc">כל שחקנ.ית מסדר.ת את אותם הקלפים בסדר שלה ויוצר.ת סיפור — בסוף משווים</div>
+            <div class="mode-card-desc">כל אחד מסדר את אותם הקלפים בסדר שלו ויוצר סיפור — בסוף משווים</div>
           </div>
           <div class="mode-card" data-mode="cards-only">
             <div class="mode-card-title">משפט חופשי</div>
-            <div class="mode-card-desc">השחקנ.ית הפעיל.ה בוחר.ת קלף וכותב.ת משפט שמתאים לו — השני מנחש איזה קלף נבחר</div>
+            <div class="mode-card-desc">בכל תור בוחרים קלף וכותבים משפט שמתאים לו — השני מנחש איזה קלף נבחר</div>
           </div>
           <div class="mode-card selected" data-mode="fixed">
             <div class="mode-card-title">התאמת משפט לקלף</div>
-            <div class="mode-card-desc">משפט מוגרל — כל שחקנ.ית בוחר.ת קלף שמייצג אותה ומנסים לנחש את בחירת השני</div>
+            <div class="mode-card-desc">משפט מוגרל — כל אחד בוחר קלף שמייצג אותו ומנסים לנחש את בחירת השני</div>
           </div>
         </div>
       </div>
@@ -352,7 +352,7 @@
           <h3 class="settings-section-title">הסתרת קלפים</h3>
           <p class="settings-section-desc">קלפים מוסתרים לא יוגרלו במשחק</p>
           <div id="hidden-cards-summary" class="hidden-cards-summary">אין קלפים מוסתרים</div>
-          <button id="btn-manage-hidden" class="btn btn-secondary btn-small">בחר/י קלפים להסתרה ←</button>
+          <button id="btn-manage-hidden" class="btn btn-secondary btn-small">בחירת קלפים להסתרה ←</button>
         </div>
 
       </div><!-- /advanced-settings-panel -->
@@ -422,11 +422,11 @@
           <button class="fp-note-color" data-color="#d6e8ff" style="background:#d6e8ff" title="כחול"></button>
           <button class="fp-note-color" data-color="#f5d6ff" style="background:#f5d6ff" title="סגול"></button>
         </div>
-        <textarea id="fp-note-text" class="fp-note-textarea" placeholder="כתוב/י כאן..." rows="4" maxlength="120"></textarea>
+        <textarea id="fp-note-text" class="fp-note-textarea" placeholder="כתיבה כאן..." rows="4" maxlength="120"></textarea>
         <div class="fp-note-actions">
           <button id="fp-note-save" class="btn btn-primary btn-small">שמור</button>
           <button id="fp-note-cancel" class="btn btn-secondary btn-small">ביטול</button>
-          <button id="fp-note-delete" class="btn btn-ghost btn-small">מחק פתק</button>
+          <button id="fp-note-delete" class="btn btn-ghost btn-small">מחיקת פתק</button>
         </div>
       </div>
     </div>
@@ -439,7 +439,7 @@
     <div id="fp-disconnect-overlay" class="overlay hidden">
       <div class="overlay-box">
         <p class="overlay-emoji">😔</p>
-        <p>השחקנ.ית התנתק.ה</p>
+        <p>חיבור השחקנ.ית נותק</p>
         <button onclick="sessionStorage.removeItem('gameSession'); location.reload()" class="btn btn-primary">חזור לדף הבית</button>
       </div>
     </div>
@@ -452,11 +452,11 @@
         <h2 class="card-browser-title">קלפים להסתרה</h2>
         <button id="btn-close-hidden-cards" class="btn-close-overlay">✕</button>
       </div>
-      <p class="hidden-cards-overlay-desc">לחצ/י על קלף כדי להסתיר/להציג אותו. קלפים מסומנים לא יוגרלו.</p>
+      <p class="hidden-cards-overlay-desc">לחיצה על קלף — הסתרה או הצגה. קלפים מסומנים לא יוגרלו.</p>
       <div class="card-browser-grid" id="hidden-cards-grid"></div>
     </div>
   </div>
 
-  <script type="module" src="game.js?v=14"></script>
+  <script type="module" src="game.js?v=15"></script>
 </body>
 </html>

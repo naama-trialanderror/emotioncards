@@ -286,7 +286,7 @@ function showPlayerView(code) {
   if (code) {
     document.getElementById('room-code-input').value = code.toUpperCase();
     document.getElementById('player-join-desc').textContent =
-      `הוזמנת למשחק — רק הזינו שם ולחצו להצטרף`;
+      `הוזמנתם — הזינו שם והצטרפו`;
   }
   setTimeout(() => document.getElementById('child-name').focus(), 100);
 }
@@ -761,7 +761,7 @@ function renderLobby(room) {
     document.getElementById('lobby-link-display').textContent =
       `${location.origin}/?join=${roomCode}`;
     if (room.childConnected) {
-      document.getElementById('lobby-status-text').textContent = `${room.childName} מחובר.ת! 🎉`;
+      document.getElementById('lobby-status-text').textContent = `${room.childName} כאן! 🎉`;
       document.getElementById('lobby-spinner').classList.add('hidden');
       document.getElementById('btn-start').classList.remove('hidden');
     } else {
@@ -785,8 +785,8 @@ function renderChoosePrompt(room, isActive) {
   banner.className = 'phase-banner phase-choosing';
   const activeName = room.activePlayer === 'therapist' ? room.therapistName : room.childName;
   document.getElementById('phase-text').textContent = isActive
-    ? 'בחר/י משפט:'
-    : `${activeName} בוחר/ת משפט...`;
+    ? 'בחירת משפט:'
+    : `${activeName} בוחרים משפט...`;
 
   // Prompt options go in the STICKY TOP area
   const optionsArea = document.getElementById('prompt-options-area');
@@ -901,7 +901,7 @@ function renderPhase(room, isActive) {
       text.textContent = 'לחצו שוב לאישור — או בחרו קלף אחר';
     } else {
       text.textContent = isActive
-        ? 'תורך! בחר/י קלף שמתאים למשפט'
+        ? 'תורך! בחרו קלף שמתאים למשפט'
         : `ממתינים ל${activeName} לבחור קלף...`;
     }
   } else if (room.phase === 'guessing') {
@@ -909,7 +909,7 @@ function renderPhase(room, isActive) {
       text.textContent = 'לחצו שוב לאישור — או בחרו קלף אחר';
     } else {
       text.textContent = !isActive
-        ? 'תורך לנחש! לאיזה קלף התכוונו?'
+        ? 'תורך לנחש — לאיזה קלף התכוונו?'
         : `ממתינים לניחוש...`;
     }
   } else if (room.phase === 'reveal') {
@@ -1091,7 +1091,7 @@ function buildCard(cardId) {
   if (myRole === 'therapist') {
     const hideBtn = document.createElement('button');
     hideBtn.className = 'card-hide-btn';
-    hideBtn.title = 'הסתר קלף זה מהגרלות עתידיות';
+    hideBtn.title = 'הסתרה מהגרלות עתידיות';
     hideBtn.textContent = '🚫';
     hideBtn.addEventListener('click', e => { e.stopPropagation(); toggleHideCard(cardId); });
     div.appendChild(hideBtn);
@@ -1212,8 +1212,8 @@ function renderActions(room, isActive) {
     const scoreDiv = document.createElement('div');
     scoreDiv.className = 'reveal-score-msg';
     scoreDiv.textContent = correct
-      ? `${guesserName} מקבל.ת 3 נקודות • ${chooserName} מקבל.ת 1`
-      : `${chooserName} מקבל.ת 3 נקודות`;
+      ? `3 נקודות ל${guesserName} • 1 נקודה ל${chooserName}`
+      : `3 נקודות ל${chooserName}`;
     area.appendChild(scoreDiv);
 
     // Next round button
@@ -1291,7 +1291,7 @@ function populateHiddenCardsGrid() {
     const isHidden = hidden.includes(i);
     const cell = document.createElement('div');
     cell.className = 'browser-card' + (isHidden ? ' hc-card-hidden' : '');
-    cell.title = isHidden ? 'מוסתר — לחץ/י לבטל הסתרה' : 'לחץ/י להסתרה';
+    cell.title = isHidden ? 'מוסתר — לחיצה לביטול' : 'לחיצה להסתרה';
 
     const src = `/cards/card_${String(i).padStart(2,'0')}.png`;
     const img = document.createElement('img');
@@ -1310,7 +1310,7 @@ function populateHiddenCardsGrid() {
       toggleHideCard(i);
       const nowHidden = getHiddenCards().includes(i);
       cell.classList.toggle('hc-card-hidden', nowHidden);
-      cell.title = nowHidden ? 'מוסתר — לחץ/י לבטל הסתרה' : 'לחץ/י להסתרה';
+      cell.title = nowHidden ? 'מוסתר — לחץ/י לבטל הסתרה' : 'לחיצה להסתרה';
       let badge = cell.querySelector('.hc-hidden-badge');
       if (nowHidden && !badge) {
         badge = document.createElement('div');
@@ -1435,7 +1435,7 @@ function renderFreePlay(room) {
   tableEl.innerHTML = '';
   tableCards.forEach(cardId => {
     const noteData = tableNotes[cardId] || null;
-    const el = fpBuildCard(cardId, 'אסוף לידיים שלי', () => fpTakeFromTable(cardId), noteData, true);
+    const el = fpBuildCard(cardId, 'לקחת לידיים', () => fpTakeFromTable(cardId), noteData, true);
     tableEl.appendChild(el);
   });
 
@@ -1450,7 +1450,7 @@ function renderFreePlay(room) {
   const handEl = document.getElementById('fp-hand-cards');
   handEl.innerHTML = '';
   myHand.forEach(cardId => {
-    const btnText = tableIsFull ? 'שולחן מלא' : 'הנח על השולחן';
+    const btnText = tableIsFull ? 'שולחן מלא' : 'להניח על השולחן';
     const onClick = tableIsFull ? null : () => fpPlaceOnTable(cardId);
     const el = fpBuildCard(cardId, btnText, onClick);
     if (tableIsFull) el.querySelector('.fp-card-btn').classList.add('fp-card-btn--disabled');
@@ -1489,7 +1489,7 @@ function fpBuildCard(cardId, btnText, onClick, noteData = null, isTableCard = fa
   if (isTableCard) {
     const noteBtn = document.createElement('button');
     noteBtn.className = 'fp-card-note-btn' + (noteData ? ' fp-card-note-btn--has-note' : '');
-    noteBtn.title = noteData ? 'ערוך פתק' : 'הוסף פתק';
+    noteBtn.title = noteData ? 'עריכת פתק' : 'הוספת פתק';
     noteBtn.textContent = noteData ? '✏️' : '📝';
     noteBtn.addEventListener('click', e => { e.stopPropagation(); fpOpenNoteModal(cardId, noteData); });
     div.appendChild(noteBtn);
