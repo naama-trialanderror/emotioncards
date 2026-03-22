@@ -275,6 +275,106 @@ input, textarea { font-family: var(--font); direction: rtl; }
   box-shadow: var(--shadow-lg);
 }
 
+/* ── Reconnect banner ── */
+.reconnect-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 999;
+  background: #1e3a5f;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+.reconnect-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.reconnect-icon { font-size: 20px; flex-shrink: 0; }
+.reconnect-desc { font-size: 14px; font-weight: 500; }
+.reconnect-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.reconnect-actions .btn { width: auto; }
+.reconnect-actions .btn-ghost { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.35); }
+.reconnect-actions .btn-ghost:hover { color: #fff; border-color: #fff; }
+
+/* ── Manager / player landing views ── */
+#landing-manager,
+#landing-player {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* form wrap — centered, max-width */
+.landing-form-wrap {
+  width: 100%;
+  max-width: 400px;
+  padding: 36px 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+.landing-form-wrap--player {
+  max-width: 360px;
+  padding-top: 48px;
+}
+
+.landing-form-title {
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+}
+.landing-form-desc {
+  font-size: 14px;
+  color: var(--text-mid);
+  text-align: center;
+  font-weight: 300;
+  margin: -6px 0 4px;
+}
+
+.landing-switch-hint {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.landing-switch-hint a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.landing-switch-hint a:hover { text-decoration: underline; }
+
+/* Simpler hero for player view */
+.landing-hero--player {
+  padding: 52px 24px 36px;
+  gap: 0;
+}
+.landing-hero--player .landing-tagline {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-mid);
+  margin-top: 6px;
+}
+
+/* ── Inline input errors ── */
+.input-error {
+  font-size: 13px;
+  color: var(--danger);
+  font-weight: 500;
+  margin-top: -8px;
+  text-align: center;
+}
+
 /* Cards row */
 .landing-options {
   display: flex;

@@ -12,64 +12,69 @@
 </head>
 <body>
 
+  <!-- Reconnect banner (shown when session is detected) -->
+  <div id="reconnect-banner" class="reconnect-banner hidden">
+    <div class="reconnect-content">
+      <span class="reconnect-icon">🎮</span>
+      <span id="reconnect-desc" class="reconnect-desc"></span>
+    </div>
+    <div class="reconnect-actions">
+      <button id="btn-reconnect" class="btn btn-primary btn-small">חזרה למשחק</button>
+      <button id="btn-dismiss-reconnect" class="btn btn-ghost btn-small">התחלה מחדש</button>
+    </div>
+  </div>
+
   <!-- ═══════════════════════════════════ LANDING ═══════════════════════════════════ -->
   <div id="screen-landing" class="screen active">
-    <div class="landing-hero">
-      <div class="landing-title-wrap">
-        <h1 class="landing-title">קלפים מדברים</h1>
-        <p class="landing-tagline">כלי דיגיטלי לשיח רגשי</p>
+
+    <!-- ── Manager view (default) ── -->
+    <div id="landing-manager">
+      <div class="landing-hero">
+        <div class="landing-title-wrap">
+          <h1 class="landing-title">קלפים מדברים</h1>
+          <p class="landing-tagline">כלי דיגיטלי לשיח רגשי</p>
+        </div>
+        <div id="landing-fan" aria-hidden="true">
+          <img class="fan-card" data-index="0" src="cards/card_07.png" alt="">
+          <img class="fan-card" data-index="1" src="cards/card_23.png" alt="">
+          <img class="fan-card" data-index="2" src="cards/card_41.png" alt="">
+          <img class="fan-card" data-index="3" src="cards/card_68.png" alt="">
+        </div>
+        <button id="btn-open-card-browser" class="btn-browse-cards">גלה את כל הקלפים ←</button>
       </div>
 
-      <!-- Card fan preview -->
-      <div id="landing-fan" aria-hidden="true">
-        <img class="fan-card" data-index="0" src="cards/card_07.png" alt="">
-        <img class="fan-card" data-index="1" src="cards/card_23.png" alt="">
-        <img class="fan-card" data-index="2" src="cards/card_41.png" alt="">
-        <img class="fan-card" data-index="3" src="cards/card_68.png" alt="">
+      <div class="landing-form-wrap">
+        <h2 class="landing-form-title">מנהל.ת משחק</h2>
+        <p class="landing-form-desc">צור.י משחק חדש וקבל.י קוד לשיתוף</p>
+        <input type="text" id="therapist-name" class="input" placeholder="השם שלך"
+               maxlength="20" autocomplete="off">
+        <p id="error-manager" class="input-error hidden">נא להזין שם</p>
+        <button id="btn-go-settings" class="btn btn-primary btn-lg">הגדרות ויצירה ◀</button>
+        <p class="landing-switch-hint">שחקנ.ית? <a href="#" id="btn-switch-to-player">לחצו כאן</a></p>
       </div>
-
-      <button id="btn-open-card-browser" class="btn-browse-cards">גלה את כל הקלפים ←</button>
     </div>
 
-    <div class="landing-options">
-      <!-- Game manager -->
-      <div class="landing-card">
-        <h2>מנהל.ת משחק</h2>
-        <p class="landing-card-desc">צור.י משחק חדש וקבל.י קוד לשיתוף עם השחקנ.ית</p>
-        <input
-          type="text"
-          id="therapist-name"
-          class="input"
-          placeholder="השם שלך"
-          maxlength="20"
-          autocomplete="off"
-        >
-        <button id="btn-go-settings" class="btn btn-primary">הגדרות ויצירה ◀</button>
+    <!-- ── Player view (shown when ?join= in URL or user switches) ── -->
+    <div id="landing-player" class="hidden">
+      <div class="landing-hero landing-hero--player">
+        <div class="landing-title-wrap">
+          <h1 class="landing-title">קלפים מדברים</h1>
+          <p class="landing-tagline">כנסו למשחק</p>
+        </div>
       </div>
 
-      <div class="landing-divider">או</div>
-
-      <!-- Player -->
-      <div class="landing-card">
-        <h2>שחקנ.ית</h2>
-        <p class="landing-card-desc">הצטרף.י למשחק עם קוד שקיבלת ממנהל.ת המשחק</p>
-        <input
-          type="text"
-          id="child-name"
-          class="input"
-          placeholder="השם שלך"
-          maxlength="20"
-          autocomplete="off"
-        >
-        <input
-          type="text"
-          id="room-code-input"
-          class="input input-code"
-          placeholder="קוד חדר"
-          maxlength="5"
-          autocomplete="off"
-        >
-        <button id="btn-join" class="btn btn-secondary">הצטרף.י</button>
+      <div class="landing-form-wrap landing-form-wrap--player">
+        <h2 class="landing-form-title">הזינו את שמכם</h2>
+        <p class="landing-form-desc" id="player-join-desc">ממתינים לשמכם כדי להצטרף למשחק</p>
+        <input type="text" id="child-name" class="input" placeholder="השם שלך"
+               maxlength="20" autocomplete="off">
+        <p id="error-player" class="input-error hidden">נא להזין שם</p>
+        <!-- hidden code input — filled by JS from URL or session -->
+        <input type="text" id="room-code-input" class="input input-code"
+               placeholder="קוד חדר" maxlength="5" autocomplete="off"
+               style="display:none">
+        <button id="btn-join" class="btn btn-primary btn-lg">כנסו למשחק ◀</button>
+        <p class="landing-switch-hint">מנהל.ת משחק? <a href="#" id="btn-switch-to-manager">לחצו כאן</a></p>
       </div>
     </div>
 
@@ -266,7 +271,7 @@
       <div class="overlay-box">
         <p class="overlay-emoji">😔</p>
         <p id="disconnect-msg">השחקנ.ית התנתק.ה</p>
-        <button onclick="location.reload()" class="btn btn-primary">חזור לדף הבית</button>
+        <button onclick="sessionStorage.removeItem('gameSession'); location.reload()" class="btn btn-primary">חזור לדף הבית</button>
       </div>
     </div>
 
@@ -430,11 +435,11 @@
       <div class="overlay-box">
         <p class="overlay-emoji">😔</p>
         <p>השחקנ.ית התנתק.ה</p>
-        <button onclick="location.reload()" class="btn btn-primary">חזור לדף הבית</button>
+        <button onclick="sessionStorage.removeItem('gameSession'); location.reload()" class="btn btn-primary">חזור לדף הבית</button>
       </div>
     </div>
   </div>
 
-  <script type="module" src="game.js?v=10"></script>
+  <script type="module" src="game.js?v=11"></script>
 </body>
 </html>

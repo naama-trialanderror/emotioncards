@@ -158,6 +158,8 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 
+// ── Error helpers ─────────────────────────────────────
+
 function showError(msg) {
   const el = document.getElementById('landing-error');
   el.textContent = msg;
@@ -165,13 +167,163 @@ function showError(msg) {
   setTimeout(() => el.classList.add('hidden'), 4000);
 }
 
+function showInlineError(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
+// ── localStorage — manager settings ───────────────────
+
+function saveManagerSettings() {
+  try {
+    localStorage.setItem('managerSettings', JSON.stringify({
+      name: document.getElementById('therapist-name').value.trim(),
+      mode: selectedMode,
+      cardsCount: selectedCardsCount,
+      allowReroll: selectedAllowReroll,
+    }));
+  } catch {}
+}
+
+function loadManagerSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('managerSettings'));
+    if (!s) return;
+    if (s.name) document.getElementById('therapist-name').value = s.name;
+    if (s.mode) {
+      selectedMode = s.mode;
+      document.querySelectorAll('.mode-card[data-mode]').forEach(c =>
+        c.classList.toggle('selected', c.dataset.mode === s.mode));
+    }
+    if (s.cardsCount) {
+      selectedCardsCount = s.cardsCount;
+      document.querySelectorAll('.count-btn[data-count]').forEach(b =>
+        b.classList.toggle('selected', parseInt(b.dataset.count) === s.cardsCount));
+    }
+    if (s.allowReroll !== undefined) {
+      selectedAllowReroll = s.allowReroll;
+      document.getElementById('toggle-allow-reroll').checked = s.allowReroll;
+    }
+  } catch {}
+}
+
+// ── sessionStorage — reconnect ────────────────────────
+
+function saveSession(code, role, name) {
+  try {
+    sessionStorage.setItem('gameSession', JSON.stringify({ roomCode: code, role, name }));
+  } catch {}
+}
+
+function loadSession() {
+  try { return JSON.parse(sessionStorage.getItem('gameSession')); }
+  catch { return null; }
+}
+
+function clearSession() {
+  sessionStorage.removeItem('gameSession');
+}
+
+// ── Landing routing ───────────────────────────────────
+
+function showManagerView() {
+  document.getElementById('landing-manager').classList.remove('hidden');
+  document.getElementById('landing-player').classList.add('hidden');
+}
+
+function showPlayerView(code) {
+  document.getElementById('landing-manager').classList.add('hidden');
+  document.getElementById('landing-player').classList.remove('hidden');
+  if (code) {
+    document.getElementById('room-code-input').value = code.toUpperCase();
+    document.getElementById('player-join-desc').textContent =
+      `הוזמנת למשחק — רק הזינו שם ולחצו להצטרף`;
+  }
+  setTimeout(() => document.getElementById('child-name').focus(), 100);
+}
+
+document.getElementById('btn-switch-to-player').addEventListener('click', e => {
+  e.preventDefault();
+  showPlayerView('');
+  document.getElementById('room-code-input').style.display = '';
+  document.getElementById('room-code-input').placeholder = 'קוד חדר';
+  document.getElementById('player-join-desc').textContent = 'קיבלתם קוד חדר? הזינו אותו כאן';
+});
+
+document.getElementById('btn-switch-to-manager').addEventListener('click', e => {
+  e.preventDefault();
+  showManagerView();
+});
+
+// ── Reconnect banner ──────────────────────────────────
+
+function showReconnectBanner(session) {
+  const roleLabel = session.role === 'therapist' ? 'מנהל.ת משחק' : 'שחקנ.ית';
+  document.getElementById('reconnect-desc').textContent =
+    `נמצא משחק פתוח (${session.name} • ${roleLabel}) — רוצים לחזור?`;
+  document.getElementById('reconnect-banner').classList.remove('hidden');
+}
+
+document.getElementById('btn-reconnect').addEventListener('click', async () => {
+  const session = loadSession();
+  if (!session) return;
+  try {
+    const snap = await get(ref(db, `rooms/${session.roomCode}`));
+    if (!snap.exists()) {
+      clearSession();
+      document.getElementById('reconnect-banner').classList.add('hidden');
+      return showInlineError('error-manager', 'המשחק כבר לא קיים');
+    }
+    roomCode = session.roomCode;
+    myRole   = session.role;
+    document.getElementById('reconnect-banner').classList.add('hidden');
+    if (myRole === 'therapist') {
+      document.getElementById('therapist-name').value = session.name;
+    }
+    showScreen('screen-lobby');
+    if (myRole === 'therapist') {
+      document.getElementById('therapist-lobby-controls').classList.remove('hidden');
+    } else {
+      document.getElementById('child-lobby-msg').classList.remove('hidden');
+    }
+    listenToRoom(session.roomCode);
+  } catch (e) {
+    showInlineError('error-manager', 'שגיאה בחיבור: ' + e.message);
+  }
+});
+
+document.getElementById('btn-dismiss-reconnect').addEventListener('click', () => {
+  clearSession();
+  document.getElementById('reconnect-banner').classList.add('hidden');
+});
+
+// ── Init on page load ─────────────────────────────────
+
+(function initLanding() {
+  // Load saved manager settings
+  loadManagerSettings();
+
+  // URL routing
+  const joinCode = new URLSearchParams(location.search).get('join');
+  if (joinCode) {
+    showPlayerView(joinCode);
+  } else {
+    // Check for saved session
+    const session = loadSession();
+    if (session) showReconnectBanner(session);
+  }
+})();
+
 // ══════════════════════════════════════════════════════
 // LANDING
 // ══════════════════════════════════════════════════════
 
 document.getElementById('btn-go-settings').addEventListener('click', () => {
   if (!document.getElementById('therapist-name').value.trim()) {
-    return showError('נא להזין שם');
+    return showInlineError('error-manager', 'נא להזין שם');
   }
   renderPromptsScreen();
   showScreen('screen-settings');
@@ -215,7 +367,7 @@ document.getElementById('toggle-allow-reroll').addEventListener('change', e => {
 
 document.getElementById('btn-create').addEventListener('click', async () => {
   const name = document.getElementById('therapist-name').value.trim();
-  if (!name) return showError('נא להזין שם');
+  if (!name) return showInlineError('error-manager', 'נא להזין שם');
 
   const code = generateCode();
   roomCode = code;
@@ -248,6 +400,8 @@ document.getElementById('btn-create').addEventListener('click', async () => {
     return showError('שגיאה בחיבור ל-Firebase: ' + e.message);
   }
 
+  saveManagerSettings();
+  saveSession(code, 'therapist', name);
   document.getElementById('display-code').textContent = code;
   showScreen('screen-lobby');
   document.getElementById('therapist-lobby-controls').classList.remove('hidden');
@@ -258,18 +412,19 @@ document.getElementById('btn-join').addEventListener('click', async () => {
   try {
     const name = document.getElementById('child-name').value.trim();
     const code = document.getElementById('room-code-input').value.trim().toUpperCase();
-    if (!name) return showError('נא להזין שם');
-    if (code.length < 4) return showError('נא להזין קוד חדר');
+    if (!name) return showInlineError('error-player', 'נא להזין שם');
+    if (code.length < 4) return showInlineError('error-player', 'נא להזין קוד חדר');
 
     const snap = await get(ref(db, `rooms/${code}`));
-    if (!snap.exists()) return showError('קוד חדר לא נמצא. בדוק שוב.');
+    if (!snap.exists()) return showInlineError('error-player', 'קוד חדר לא נמצא. בדוק שוב.');
     const room = snap.val();
-    if (room.childConnected) return showError('החדר כבר מלא.');
+    if (room.childConnected) return showInlineError('error-player', 'החדר כבר מלא.');
 
     roomCode = code;
     myRole   = 'child';
 
     await update(ref(db, `rooms/${code}`), { childName: name, childConnected: true });
+    saveSession(code, 'child', name);
 
     showScreen('screen-lobby');
     document.getElementById('child-lobby-msg').classList.remove('hidden');
@@ -1352,4 +1507,4 @@ document.querySelectorAll('.fp-note-color').forEach(el => {
 
 document.getElementById('btn-fp-flip').addEventListener('click', fpFlipCard);
 document.getElementById('btn-fp-deal').addEventListener('click', fpDeal);
-document.getElementById('btn-fp-end').addEventListener('click', () => location.reload());
+document.getElementById('btn-fp-end').addEventListener('click', () => { clearSession(); location.reload(); });
