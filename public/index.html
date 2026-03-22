@@ -144,12 +144,6 @@
         <button id="btn-start" class="btn btn-primary btn-lg hidden">התחל משחק ▶</button>
       </div>
 
-      <!-- Solo browse — manager only -->
-      <div id="lobby-solo-section" class="lobby-solo-section hidden">
-        <p class="lobby-solo-hint">רוצה לסייר לבד לפני שהשחקנ.ית מגיע.ה?</p>
-        <button id="btn-start-solo" class="btn btn-secondary">עיון לבד ←</button>
-      </div>
-
       <!-- Player waiting message -->
       <div id="child-lobby-msg" class="hidden lobby-child-wait">
         <p>מחכים למנהל.ת המשחק להתחיל...</p>
@@ -189,7 +183,7 @@
     <!-- Phase banner -->
     <div class="phase-banner" id="phase-banner">
       <span id="phase-text">...</span>
-      <button id="btn-next-round-top" class="btn btn-primary btn-small hidden">סיבוב הבא →</button>
+      <button id="btn-next-round-top" class="btn btn-primary btn-small hidden">← סיבוב הבא</button>
     </div>
 
     <!-- Prompt area -->
@@ -199,7 +193,7 @@
 
       <div id="cards-only-input-area" class="hidden">
         <input type="text" id="cards-only-text" class="input cards-only-text-input"
-          placeholder="הקלד/י משפט שיופיע לשחקנ.ית השניה (אופציונלי)..." maxlength="120" autocomplete="off">
+          placeholder="כתוב/י כאן משפט שיופיע לשחקנ.ית..." maxlength="120" autocomplete="off">
       </div>
       <div class="prompt-bubble" id="prompt-bubble">
         <p id="prompt-text" class="prompt-text">...</p>
@@ -288,20 +282,24 @@
         <h3 class="settings-section-title">סוג המשחק</h3>
         <div class="mode-options">
           <div class="mode-card selected" data-mode="fixed">
+            <div class="mode-card-emoji">🎯</div>
             <div class="mode-card-title">משפט קבוע</div>
-            <div class="mode-card-desc">משפט אחד מוצג בכל תור — השחקנ.ית בוחר.ת קלף שמתאים לה</div>
+            <div class="mode-card-desc">משפט מוגרל מראש — כל שחקנ.ית בוחר.ת קלף שמייצג אותה ומנסים לנחש את בחירת השני</div>
           </div>
           <div class="mode-card" data-mode="choice">
+            <div class="mode-card-emoji">🔀</div>
             <div class="mode-card-title">בחירת משפט</div>
-            <div class="mode-card-desc">השחקנ.ית הפעיל.ה בוחר.ת מבין כמה משפטים — ואז בוחר.ת קלף</div>
+            <div class="mode-card-desc">השחקנ.ית הפעיל.ה בוחר.ת מבין 3 משפטים — משחק יותר אינטראקטיבי ומגוון</div>
           </div>
           <div class="mode-card" data-mode="cards-only">
+            <div class="mode-card-emoji">🖼️</div>
             <div class="mode-card-title">קלפים בלבד</div>
-            <div class="mode-card-desc">אין משפט — השחקנים ממציאים את המשפט בעצמם</div>
+            <div class="mode-card-desc">ללא משפט מוגרל — השחקנים ממציאים ביחד משפט שמתאים לקלף שנבחר</div>
           </div>
           <div class="mode-card" data-mode="free-play">
+            <div class="mode-card-emoji">🃏</div>
             <div class="mode-card-title">חפיסת קלפים</div>
-            <div class="mode-card-desc">עיון חופשי בקלפים — בחרו, הניחו על השולחן ודברו</div>
+            <div class="mode-card-desc">עיון חופשי — בלי תורות ובלי ניקוד. הניחו קלפים על השולחן ושוחחו עליהם</div>
           </div>
         </div>
       </div>
@@ -330,6 +328,11 @@
             <input type="checkbox" id="toggle-child-settings">
             <span class="toggle-track"></span>
             <span>אפשר לשחקנ.ית לשנות הגדרות תוך כדי משחק</span>
+          </label>
+          <label class="toggle-label">
+            <input type="checkbox" id="toggle-allow-reroll" checked>
+            <span class="toggle-track"></span>
+            <span>אפשר הגרלה חוזרת של משפט</span>
           </label>
         </div>
 
@@ -429,6 +432,6 @@
     </div>
   </div>
 
-  <script type="module" src="game.js?v=8"></script>
+  <script type="module" src="game.js?v=9"></script>
 </body>
 </html>

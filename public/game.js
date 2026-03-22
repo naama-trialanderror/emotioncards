@@ -89,7 +89,7 @@ let PROMPTS = [
   { id:'p39', text:'המשחק שאני הכי אוהב.ת הוא...', category:'play', enabled:true },
   { id:'p40', text:'הסרט או הסדרה שאני הכי אוהב.ת...', category:'play', enabled:true },
   // אם הייתי...
-  { id:'p41', text:'אם הייתי חיה, הייתי...', category:'imagine', enabled:true },
+  { id:'p41', text:'אם הייתי מקום בעולם, הייתי...', category:'imagine', enabled:true },
   { id:'p42', text:'אם הייתי צבע, הייתי...', category:'imagine', enabled:true },
   { id:'p43', text:'אם הייתי ממתק, הייתי...', category:'imagine', enabled:true },
   { id:'p44', text:'כוח העל שהייתי רוצה שיהיה לי הוא...', category:'imagine', enabled:true },
@@ -106,9 +106,10 @@ let myRole    = null;   // 'therapist' | 'child'
 let roomCode  = null;
 let roomRef   = null;
 let currentRoom = null; // latest snapshot
-let selectedMode = 'fixed';       // 'fixed' | 'choice' | 'cards-only'
+let selectedMode = 'fixed';       // 'fixed' | 'choice' | 'cards-only' | 'free-play'
 let selectedCardsCount = 3;
 let selectedChildCanSettings = false;
+let selectedAllowReroll = true;
 
 let pendingCard = null;  // local pending selection (not synced to Firebase)
 let prevPhase   = null;  // track phase changes to reset pending
@@ -208,6 +209,10 @@ document.getElementById('toggle-child-settings').addEventListener('change', e =>
   selectedChildCanSettings = e.target.checked;
 });
 
+document.getElementById('toggle-allow-reroll').addEventListener('change', e => {
+  selectedAllowReroll = e.target.checked;
+});
+
 document.getElementById('btn-create').addEventListener('click', async () => {
   const name = document.getElementById('therapist-name').value.trim();
   if (!name) return showError('נא להזין שם');
@@ -236,6 +241,7 @@ document.getElementById('btn-create').addEventListener('click', async () => {
       gameMode:            selectedMode,
       cardsPerRound:       selectedCardsCount,
       childCanSettings:    selectedChildCanSettings,
+      allowReroll:         selectedAllowReroll,
       createdAt:           Date.now(),
     });
   } catch (e) {
@@ -434,25 +440,6 @@ document.getElementById('btn-start').addEventListener('click', async () => {
   }
 });
 
-// ── Start solo browse ─────────────────────────────────
-
-document.getElementById('btn-start-solo').addEventListener('click', async () => {
-  try {
-    await update(ref(db, `rooms/${roomCode}`), {
-      childName:      'מטופל',
-      childConnected: true,
-      solo:           true,
-    });
-    const room = { ...currentRoom, childName: 'מטופל', childConnected: true, solo: true };
-    if (room.gameMode === 'free-play') {
-      await writeNewFreePlayGame();
-    } else {
-      await writeNewRound(room, 'therapist', 1);
-    }
-  } catch (e) {
-    showError('שגיאה בפתיחת עיון לבד: ' + e.message);
-  }
-});
 
 // ══════════════════════════════════════════════════════
 // FIREBASE LISTENER
@@ -561,15 +548,13 @@ function renderLobby(room) {
     document.getElementById('lobby-link-display').textContent =
       `${location.origin}/?join=${roomCode}`;
     if (room.childConnected) {
-      document.getElementById('lobby-status-text').textContent = `${room.childName} מחובר/ת! 🎉`;
+      document.getElementById('lobby-status-text').textContent = `${room.childName} מחובר.ת! 🎉`;
       document.getElementById('lobby-spinner').classList.add('hidden');
       document.getElementById('btn-start').classList.remove('hidden');
-      document.getElementById('lobby-solo-section').classList.add('hidden');
     } else {
-      document.getElementById('lobby-status-text').textContent = 'ממתין...';
+      document.getElementById('lobby-status-text').textContent = 'ממתינים לשחקנ.ית...';
       document.getElementById('lobby-spinner').classList.remove('hidden');
       document.getElementById('btn-start').classList.add('hidden');
-      document.getElementById('lobby-solo-section').classList.remove('hidden');
     }
   } else {
     document.getElementById('lobby-instructions').classList.add('hidden');
@@ -691,22 +676,32 @@ document.querySelectorAll('[data-midcount]').forEach(btn => {
 function renderPhase(room, isActive) {
   const banner = document.getElementById('phase-banner');
   const text   = document.getElementById('phase-text');
-  const activeName   = room.activePlayer === 'therapist' ? room.therapistName : room.childName;
+  const activeName  = room.activePlayer === 'therapist' ? room.therapistName : room.childName;
   const myTurn = (room.phase === 'choosing' && isActive) ||
                  (room.phase === 'guessing' && !isActive);
 
   banner.className = `phase-banner phase-${room.phase}${myTurn ? ' my-turn' : ''}`;
 
   if (room.phase === 'choosing') {
-    text.textContent = isActive
-      ? 'תורך! בחר/י קלף שמתאים למשפט'
-      : `ממתינים ל${activeName} לבחור קלף...`;
+    if (pendingCard !== null) {
+      text.textContent = 'לחצו שוב לאישור — או בחרו קלף אחר';
+    } else {
+      text.textContent = isActive
+        ? 'תורך! בחר/י קלף שמתאים למשפט'
+        : `ממתינים ל${activeName} לבחור קלף...`;
+    }
   } else if (room.phase === 'guessing') {
-    text.textContent = !isActive
-      ? 'תורך לנחש! לאיזה קלף התכוונו?'
-      : `ממתינים לניחוש...`;
+    if (pendingCard !== null && !isActive) {
+      text.textContent = 'לחצו שוב לאישור — או בחרו קלף אחר';
+    } else {
+      text.textContent = !isActive
+        ? 'תורך לנחש! לאיזה קלף התכוונו?'
+        : `ממתינים לניחוש...`;
+    }
   } else if (room.phase === 'reveal') {
-    text.textContent = 'חשיפה!';
+    const correct = room.secretChoice === room.guess;
+    banner.className = `phase-banner phase-reveal${correct ? '' : ' phase-reveal-wrong'}`;
+    text.textContent = correct ? '🎉 ניחשתם נכון!' : '🤔 לא ניחשתם';
   }
 }
 
@@ -752,7 +747,10 @@ function renderPrompt(room, isActive) {
   document.getElementById('prompt-text').textContent = room.promptText;
 
   const canEdit = isActive && room.phase === 'choosing';
-  const canReroll = isActive && room.phase === 'choosing' && room.gameMode !== 'cards-only';
+  const canReroll = isActive && room.phase === 'choosing'
+    && room.gameMode !== 'cards-only'
+    && room.gameMode !== 'choice'
+    && room.allowReroll !== false;
   document.getElementById('btn-edit-prompt').classList.toggle('hidden', !canEdit);
   document.getElementById('btn-reroll-prompt').classList.toggle('hidden', !canReroll);
 
@@ -926,15 +924,17 @@ async function handleCardClick(cardId, room, isActive) {
 function renderActions(room, isActive) {
   const area = document.getElementById('action-area');
   area.innerHTML = '';
+  area.classList.remove('action-area--reveal');
   document.getElementById('btn-next-round-top').classList.add('hidden');
 
   const activeName  = room.activePlayer === 'therapist' ? room.therapistName : room.childName;
   const guesserName = room.activePlayer === 'therapist' ? room.childName     : room.therapistName;
+  const chooserName = activeName;
 
   if (room.phase === 'choosing' && !isActive) {
     const div = document.createElement('div');
     div.className = 'action-waiting';
-    div.innerHTML = `<div class="spinner small"></div><span>ממתין ל${activeName}...</span>`;
+    div.innerHTML = `<div class="spinner small"></div><span>ממתינים ל${activeName}...</span>`;
     area.appendChild(div);
 
   } else if (room.phase === 'guessing' && isActive) {
@@ -945,32 +945,60 @@ function renderActions(room, isActive) {
 
   } else if (room.phase === 'reveal') {
     const correct = room.secretChoice === room.guess;
-    // Personalized per player: guesser (!isActive) sees first-person, chooser sees third-person
-    let resultText;
-    if (correct) {
-      resultText = !isActive ? `ניחשת נכון! 🎉` : `${guesserName} ניחש/ה נכון! 🎉`;
-    } else {
-      resultText = !isActive
-        ? `לא ניחשת — ${activeName} מקבל/ת 3 נקודות`
-        : `לא נוחש — קיבלת 3 נקודות`;
+    area.classList.add('action-area--reveal');
+
+    // Headline
+    const headline = document.createElement('div');
+    headline.className = `reveal-headline ${correct ? 'reveal-correct' : 'reveal-wrong'}`;
+    headline.textContent = correct ? '🎉 ניחשתם נכון!' : '🤔 לא ניחשתם';
+    area.appendChild(headline);
+
+    // Card thumbnails
+    const thumbRow = document.createElement('div');
+    thumbRow.className = 'reveal-thumb-row';
+
+    const chosenDiv = document.createElement('div');
+    chosenDiv.className = 'reveal-thumb-item';
+    const chosenImg = document.createElement('img');
+    chosenImg.src = `/cards/card_${String(room.secretChoice).padStart(2,'0')}.png`;
+    chosenImg.className = `reveal-thumb-img${correct ? ' thumb-match' : ''}`;
+    chosenImg.alt = '';
+    const chosenLabel = document.createElement('span');
+    chosenLabel.textContent = 'הקלף שנבחר';
+    chosenDiv.appendChild(chosenLabel);
+    chosenDiv.appendChild(chosenImg);
+    thumbRow.appendChild(chosenDiv);
+
+    if (!correct && room.guess) {
+      const guessDiv = document.createElement('div');
+      guessDiv.className = 'reveal-thumb-item';
+      const guessImg = document.createElement('img');
+      guessImg.src = `/cards/card_${String(room.guess).padStart(2,'0')}.png`;
+      guessImg.className = 'reveal-thumb-img thumb-mismatch';
+      guessImg.alt = '';
+      const guessLabel = document.createElement('span');
+      guessLabel.textContent = 'הקלף שנוחש';
+      guessDiv.appendChild(guessLabel);
+      guessDiv.appendChild(guessImg);
+      thumbRow.appendChild(guessDiv);
     }
+    area.appendChild(thumbRow);
 
-    const revealDiv = document.createElement('div');
-    revealDiv.className = 'action-reveal';
+    // Score message
+    const scoreDiv = document.createElement('div');
+    scoreDiv.className = 'reveal-score-msg';
+    scoreDiv.textContent = correct
+      ? `${guesserName} מקבל.ת 3 נקודות • ${chooserName} מקבל.ת 1`
+      : `${chooserName} מקבל.ת 3 נקודות`;
+    area.appendChild(scoreDiv);
 
-    const result = document.createElement('div');
-    result.className = `reveal-result ${correct ? 'correct' : 'wrong'}`;
-    result.textContent = resultText;
-
+    // Next round button
     const nextBtn = document.createElement('button');
-    nextBtn.className = 'btn btn-primary btn-lg';
-    nextBtn.style.maxWidth = '240px';
-    nextBtn.textContent = 'סיבוב הבא →';
+    nextBtn.className = 'btn btn-primary reveal-next-btn';
+    nextBtn.textContent = '← סיבוב הבא';
     nextBtn.addEventListener('click', nextRound);
+    area.appendChild(nextBtn);
 
-    revealDiv.appendChild(result);
-    revealDiv.appendChild(nextBtn);
-    area.appendChild(revealDiv);
     document.getElementById('btn-next-round-top').classList.remove('hidden');
   }
 }
@@ -1016,20 +1044,30 @@ document.getElementById('btn-advanced-toggle').addEventListener('click', () => {
 function populateCardBrowser() {
   const grid = document.getElementById('card-browser-grid');
   if (grid.childElementCount > 0) return; // already populated
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const img = entry.target.querySelector('img[data-src]');
+      if (img) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
+      observer.unobserve(entry.target);
+    });
+  }, { rootMargin: '300px' });
+
   for (let i = 1; i <= TOTAL_CARDS; i++) {
     const cell = document.createElement('div');
     cell.className = 'browser-card';
+    const src = `/cards/card_${String(i).padStart(2,'0')}.png`;
     const img = document.createElement('img');
-    img.src = `/cards/card_${String(i).padStart(2,'0')}.png`;
+    img.dataset.src = src;
     img.alt = `קלף ${i}`;
-    img.loading = 'lazy';
     cell.appendChild(img);
     cell.addEventListener('click', () => {
-      const zoomModal = document.getElementById('browser-zoom-modal');
-      document.getElementById('browser-zoom-img').src = img.src;
-      zoomModal.classList.remove('hidden');
+      document.getElementById('browser-zoom-img').src = src;
+      document.getElementById('browser-zoom-modal').classList.remove('hidden');
     });
     grid.appendChild(cell);
+    observer.observe(cell);
   }
 }
 
