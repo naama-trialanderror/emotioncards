@@ -106,10 +106,11 @@ let myRole    = null;   // 'therapist' | 'child'
 let roomCode  = null;
 let roomRef   = null;
 let currentRoom = null; // latest snapshot
-let selectedMode = 'fixed';       // 'fixed' | 'choice' | 'cards-only' | 'free-play'
+let selectedMode = 'fixed';       // 'fixed' | 'cards-only' | 'free-play' (UI display mode)
 let selectedCardsCount = 3;
 let selectedChildCanSettings = false;
 let selectedAllowReroll = true;
+let selectedChoiceMode = false;   // when true + mode='fixed', effective Firebase mode is 'choice'
 
 let pendingCard = null;  // local pending selection (not synced to Firebase)
 let prevPhase   = null;  // track phase changes to reset pending
@@ -131,9 +132,11 @@ function generateCode() {
 }
 
 function pickCards(usedCardsObj, count = 3) {
+  const hidden = getHiddenCards();
   const all = Array.from({ length: TOTAL_CARDS }, (_, i) => i + 1);
-  const available = all.filter(c => !usedCardsObj?.[c]);
-  const pool = available.length >= count ? available : all;
+  const available = all.filter(c => !usedCardsObj?.[c] && !hidden.includes(c));
+  const fallback = all.filter(c => !hidden.includes(c));
+  const pool = available.length >= count ? available : (fallback.length >= count ? fallback : all);
   return shuffle(pool).slice(0, count);
 }
 
@@ -181,7 +184,7 @@ function saveManagerSettings() {
   try {
     localStorage.setItem('managerSettings', JSON.stringify({
       name: document.getElementById('therapist-name').value.trim(),
-      mode: selectedMode,
+      mode: selectedMode === 'fixed' && selectedChoiceMode ? 'choice' : selectedMode,
       cardsCount: selectedCardsCount,
       allowReroll: selectedAllowReroll,
     }));
@@ -194,9 +197,15 @@ function loadManagerSettings() {
     if (!s) return;
     if (s.name) document.getElementById('therapist-name').value = s.name;
     if (s.mode) {
-      selectedMode = s.mode;
+      const isChoice = s.mode === 'choice';
+      selectedMode = isChoice ? 'fixed' : s.mode;
+      selectedChoiceMode = isChoice;
       document.querySelectorAll('.mode-card[data-mode]').forEach(c =>
-        c.classList.toggle('selected', c.dataset.mode === s.mode));
+        c.classList.toggle('selected', c.dataset.mode === selectedMode));
+      const choiceToggle = document.getElementById('toggle-choice-mode');
+      if (choiceToggle) choiceToggle.checked = isChoice;
+      const choiceSection = document.getElementById('choice-toggle-section');
+      if (choiceSection) choiceSection.classList.toggle('hidden', selectedMode !== 'fixed');
     }
     if (s.cardsCount) {
       selectedCardsCount = s.cardsCount;
@@ -225,6 +234,43 @@ function loadSession() {
 
 function clearSession() {
   sessionStorage.removeItem('gameSession');
+}
+
+// ── localStorage — hidden cards ───────────────────────
+
+function getHiddenCards() {
+  try { return JSON.parse(localStorage.getItem('hiddenCards')) || []; }
+  catch { return []; }
+}
+
+function setHiddenCards(ids) {
+  try { localStorage.setItem('hiddenCards', JSON.stringify(ids)); } catch {}
+  updateHiddenCardsSummary();
+}
+
+function toggleHideCard(cardId) {
+  const hidden = getHiddenCards();
+  const idx = hidden.indexOf(cardId);
+  if (idx === -1) hidden.push(cardId);
+  else hidden.splice(idx, 1);
+  setHiddenCards(hidden);
+  // Refresh grid if the overlay is open
+  if (!document.getElementById('hidden-cards-overlay').classList.contains('hidden')) {
+    populateHiddenCardsGrid();
+  }
+}
+
+function updateHiddenCardsSummary() {
+  const hidden = getHiddenCards();
+  const el = document.getElementById('hidden-cards-summary');
+  if (!el) return;
+  if (hidden.length === 0) {
+    el.textContent = 'אין קלפים מוסתרים';
+    el.style.color = '';
+  } else {
+    el.textContent = `${hidden.length} קלפים מוסתרים`;
+    el.style.color = 'var(--danger)';
+  }
 }
 
 // ── Landing routing ───────────────────────────────────
@@ -305,6 +351,7 @@ document.getElementById('btn-dismiss-reconnect').addEventListener('click', () =>
 (function initLanding() {
   // Load saved manager settings
   loadManagerSettings();
+  updateHiddenCardsSummary();
 
   // URL routing
   const joinCode = new URLSearchParams(location.search).get('join');
@@ -339,12 +386,20 @@ document.querySelectorAll('.mode-card[data-mode]').forEach(card => {
     document.querySelectorAll('.mode-card[data-mode]').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     selectedMode = card.dataset.mode;
+    // Reset choice sub-mode when switching modes
+    selectedChoiceMode = false;
+    document.getElementById('toggle-choice-mode').checked = false;
+    document.getElementById('choice-toggle-section').classList.toggle('hidden', selectedMode !== 'fixed');
     document.getElementById('prompts-section').style.display =
       selectedMode === 'cards-only' ? 'none' : '';
     const isFreePlay = selectedMode === 'free-play';
     document.getElementById('advanced-settings-panel').classList.toggle('hidden-by-mode', isFreePlay);
     document.getElementById('btn-advanced-toggle').classList.toggle('hidden-by-mode', isFreePlay);
   });
+});
+
+document.getElementById('toggle-choice-mode').addEventListener('change', e => {
+  selectedChoiceMode = e.target.checked;
 });
 
 // Cards count (pre-game)
@@ -390,7 +445,7 @@ document.getElementById('btn-create').addEventListener('click', async () => {
       childScore:      0,
       usedCards:       {},
       usedPrompts:     {},
-      gameMode:            selectedMode,
+      gameMode:            selectedMode === 'fixed' && selectedChoiceMode ? 'choice' : selectedMode,
       cardsPerRound:       selectedCardsCount,
       childCanSettings:    selectedChildCanSettings,
       allowReroll:         selectedAllowReroll,
@@ -796,9 +851,10 @@ function renderHeader(room) {
 
 document.getElementById('btn-mid-settings').addEventListener('click', () => {
   if (!currentRoom) return;
-  // Sync panel to current room state
+  // Sync panel to current room state ('choice' maps to 'fixed' in UI)
+  const effectiveMode = currentRoom.gameMode === 'choice' ? 'fixed' : currentRoom.gameMode;
   document.querySelectorAll('[data-midmode]').forEach(c => {
-    c.classList.toggle('selected', c.dataset.midmode === currentRoom.gameMode);
+    c.classList.toggle('selected', c.dataset.midmode === effectiveMode);
   });
   document.querySelectorAll('[data-midcount]').forEach(b => {
     b.classList.toggle('selected', parseInt(b.dataset.midcount) === currentRoom.cardsPerRound);
@@ -1028,6 +1084,16 @@ function buildCard(cardId) {
   num.textContent = cardId;
   div.appendChild(num);
 
+  // Hide-card button — manager only, shown on hover, hides card from future rounds
+  if (myRole === 'therapist') {
+    const hideBtn = document.createElement('button');
+    hideBtn.className = 'card-hide-btn';
+    hideBtn.title = 'הסתר קלף זה מהגרלות עתידיות';
+    hideBtn.textContent = '🚫';
+    hideBtn.addEventListener('click', e => { e.stopPropagation(); toggleHideCard(cardId); });
+    div.appendChild(hideBtn);
+  }
+
   return div;
 }
 
@@ -1182,6 +1248,80 @@ function toHandCards(val) {
   if (!val) return [];
   if (Array.isArray(val)) return val.map(Number).filter(Boolean);
   return Object.values(val).map(Number).filter(Boolean);
+}
+
+// ── Hidden cards overlay ───────────────────────────────
+
+document.getElementById('btn-manage-hidden').addEventListener('click', () => {
+  populateHiddenCardsGrid();
+  document.getElementById('hidden-cards-overlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+});
+
+document.getElementById('btn-close-hidden-cards').addEventListener('click', () => {
+  document.getElementById('hidden-cards-overlay').classList.add('hidden');
+  document.body.style.overflow = '';
+});
+
+document.getElementById('hidden-cards-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('hidden-cards-overlay')) {
+    document.getElementById('hidden-cards-overlay').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+});
+
+function populateHiddenCardsGrid() {
+  const grid = document.getElementById('hidden-cards-grid');
+  grid.innerHTML = '';
+  const hidden = getHiddenCards();
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const img = entry.target.querySelector('img[data-src]');
+      if (img) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
+      observer.unobserve(entry.target);
+    });
+  }, { rootMargin: '300px' });
+
+  for (let i = 1; i <= TOTAL_CARDS; i++) {
+    const isHidden = hidden.includes(i);
+    const cell = document.createElement('div');
+    cell.className = 'browser-card' + (isHidden ? ' hc-card-hidden' : '');
+    cell.title = isHidden ? 'מוסתר — לחץ/י לבטל הסתרה' : 'לחץ/י להסתרה';
+
+    const src = `/cards/card_${String(i).padStart(2,'0')}.png`;
+    const img = document.createElement('img');
+    img.dataset.src = src;
+    img.alt = `קלף ${i}`;
+    cell.appendChild(img);
+
+    if (isHidden) {
+      const badge = document.createElement('div');
+      badge.className = 'hc-hidden-badge';
+      badge.textContent = 'מוסתר';
+      cell.appendChild(badge);
+    }
+
+    cell.addEventListener('click', () => {
+      toggleHideCard(i);
+      const nowHidden = getHiddenCards().includes(i);
+      cell.classList.toggle('hc-card-hidden', nowHidden);
+      cell.title = nowHidden ? 'מוסתר — לחץ/י לבטל הסתרה' : 'לחץ/י להסתרה';
+      let badge = cell.querySelector('.hc-hidden-badge');
+      if (nowHidden && !badge) {
+        badge = document.createElement('div');
+        badge.className = 'hc-hidden-badge';
+        badge.textContent = 'מוסתר';
+        cell.appendChild(badge);
+      } else if (!nowHidden && badge) {
+        badge.remove();
+      }
+    });
+
+    grid.appendChild(cell);
+    observer.observe(cell);
+  }
 }
 
 // ── Advanced settings accordion ───────────────────────

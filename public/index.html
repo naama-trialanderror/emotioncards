@@ -242,13 +242,10 @@
             <h4 class="settings-section-title">סוג המשחק</h4>
             <div class="mode-options" id="mid-mode-options">
               <div class="mode-card" data-midmode="fixed">
-                <div class="mode-card-title">משפט קבוע</div>
-              </div>
-              <div class="mode-card" data-midmode="choice">
-                <div class="mode-card-title">בחירת משפט</div>
+                <div class="mode-card-title">התאמת משפט לקלף</div>
               </div>
               <div class="mode-card" data-midmode="cards-only">
-                <div class="mode-card-title">קלפים בלבד</div>
+                <div class="mode-card-title">משפט חופשי</div>
               </div>
             </div>
           </div>
@@ -291,18 +288,13 @@
         <div class="mode-options">
           <div class="mode-card selected" data-mode="fixed">
             <div class="mode-card-emoji">🎯</div>
-            <div class="mode-card-title">משפט קבוע</div>
-            <div class="mode-card-desc">משפט מוגרל מראש — כל שחקנ.ית בוחר.ת קלף שמייצג אותה ומנסים לנחש את בחירת השני</div>
-          </div>
-          <div class="mode-card" data-mode="choice">
-            <div class="mode-card-emoji">🔀</div>
-            <div class="mode-card-title">בחירת משפט</div>
-            <div class="mode-card-desc">השחקנ.ית הפעיל.ה בוחר.ת מבין 3 משפטים — משחק יותר אינטראקטיבי ומגוון</div>
+            <div class="mode-card-title">התאמת משפט לקלף</div>
+            <div class="mode-card-desc">משפט מוגרל — כל שחקנ.ית בוחר.ת קלף שמייצג אותה ומנסים לנחש את בחירת השני</div>
           </div>
           <div class="mode-card" data-mode="cards-only">
             <div class="mode-card-emoji">🖼️</div>
-            <div class="mode-card-title">קלפים בלבד</div>
-            <div class="mode-card-desc">ללא משפט מוגרל — השחקנים ממציאים ביחד משפט שמתאים לקלף שנבחר</div>
+            <div class="mode-card-title">משפט חופשי</div>
+            <div class="mode-card-desc">השחקנ.ית הפעיל.ה בוחר.ת קלף וכותב.ת משפט שמתאים לו — השני מנחש איזה קלף נבחר</div>
           </div>
           <div class="mode-card" data-mode="free-play">
             <div class="mode-card-emoji">🃏</div>
@@ -344,10 +336,28 @@
           </label>
         </div>
 
+        <!-- Choice sub-mode -->
+        <div class="settings-section" id="choice-toggle-section">
+          <h3 class="settings-section-title">סגנון בחירת משפט</h3>
+          <label class="toggle-label">
+            <input type="checkbox" id="toggle-choice-mode">
+            <span class="toggle-track"></span>
+            <span>אפשר בחירה מתוך 3 משפטים (יותר אינטראקטיבי)</span>
+          </label>
+        </div>
+
         <!-- Prompts management -->
         <div class="settings-section" id="prompts-section">
           <h3 class="settings-section-title">ניהול משפטים</h3>
           <div id="prompts-categories"></div>
+        </div>
+
+        <!-- Hidden cards -->
+        <div class="settings-section">
+          <h3 class="settings-section-title">הסתרת קלפים</h3>
+          <p class="settings-section-desc">קלפים מוסתרים לא יוגרלו במשחק</p>
+          <div id="hidden-cards-summary" class="hidden-cards-summary">אין קלפים מוסתרים</div>
+          <button id="btn-manage-hidden" class="btn btn-secondary btn-small">בחר/י קלפים להסתרה ←</button>
         </div>
 
       </div><!-- /advanced-settings-panel -->
@@ -440,6 +450,18 @@
     </div>
   </div>
 
-  <script type="module" src="game.js?v=11"></script>
+  <!-- Hidden cards manager overlay -->
+  <div id="hidden-cards-overlay" class="card-browser-overlay hidden">
+    <div class="card-browser-box">
+      <div class="card-browser-header">
+        <h2 class="card-browser-title">קלפים להסתרה</h2>
+        <button id="btn-close-hidden-cards" class="btn-close-overlay">✕</button>
+      </div>
+      <p class="hidden-cards-overlay-desc">לחצ/י על קלף כדי להסתיר/להציג אותו. קלפים מסומנים לא יוגרלו.</p>
+      <div class="card-browser-grid" id="hidden-cards-grid"></div>
+    </div>
+  </div>
+
+  <script type="module" src="game.js?v=12"></script>
 </body>
 </html>

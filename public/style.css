@@ -1669,6 +1669,72 @@ input, textarea { font-family: var(--font); direction: rtl; }
   display: none !important;
 }
 
+/* ── Settings section desc ── */
+.settings-section-desc {
+  font-size: 13px;
+  color: var(--text-mid);
+  font-weight: 300;
+  margin-top: -6px;
+}
+
+/* ── Hidden cards summary ── */
+.hidden-cards-summary {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-mid);
+}
+
+/* ── Hidden cards overlay desc ── */
+.hidden-cards-overlay-desc {
+  font-size: 13px;
+  color: var(--text-mid);
+  text-align: center;
+  padding: 8px 24px 4px;
+  font-weight: 300;
+}
+
+/* ── Hidden card cell state ── */
+.browser-card.hc-card-hidden {
+  opacity: .42;
+  filter: grayscale(50%);
+  outline: 3px solid var(--danger);
+  position: relative;
+}
+
+.hc-hidden-badge {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  padding: 3px 0;
+  letter-spacing: .04em;
+  font-family: var(--font);
+}
+
+/* ── Card hide button (game screen, manager hover) ── */
+.card-hide-btn {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-full);
+  width: 30px; height: 30px;
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--t);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+  font-family: var(--font);
+}
+.card:hover .card-hide-btn { opacity: 1; }
+
 /* ══════════════════════════════════════════════════════
    FREE PLAY SCREEN
    ══════════════════════════════════════════════════════ */
