@@ -37,50 +37,65 @@ const CATEGORIES = [
   { id: 'future',   label: 'עתיד וחלומות' },
   { id: 'creative', label: 'דמיון ויצירה' },
   { id: 'play',     label: 'משחק ופנאי' },
+  { id: 'imagine',  label: 'אם הייתי... ✨' },
 ];
 
 let PROMPTS = [
-  { id:'p01', text:'בבוקר כשאני מתעורר/ת, זה...', category:'daily', enabled:true },
-  { id:'p02', text:'הרגע הכי טוב של היום שלי זה...', category:'daily', enabled:true },
+  // יומיום
+  { id:'p01', text:'בבוקר כשאני מתעורר.ת...', category:'daily', enabled:true },
+  { id:'p02', text:'הרגע הכי טוב של היום שלי הוא...', category:'daily', enabled:true },
   { id:'p03', text:'הבית שלי מרגיש...', category:'daily', enabled:true },
-  { id:'p04', text:'כשאני לבד בחדר שלי, זה...', category:'daily', enabled:true },
-  { id:'p16', text:'להיכנס לכיתה בבוקר זה...', category:'daily', enabled:true },
-  { id:'p20', text:'ההפסקה בבית ספר מרגישה...', category:'daily', enabled:true },
-  { id:'p06', text:'כשמישהו מחבק אותי, זה...', category:'emotions', enabled:true },
-  { id:'p08', text:'כשמישהו מבין אותי בלי מילים, זה...', category:'emotions', enabled:true },
-  { id:'p10', text:'כשאני מתגעגע/ת למישהו, זה...', category:'emotions', enabled:true },
-  { id:'p11', text:'כעס מרגיש כמו...', category:'emotions', enabled:true },
-  { id:'p12', text:'כשאני פוחד/ת, זה...', category:'emotions', enabled:true },
-  { id:'p13', text:'כשמשהו מפתיע אותי, זה...', category:'emotions', enabled:true },
-  { id:'p14', text:'כשאני שמח/ה באמת, זה...', category:'emotions', enabled:true },
-  { id:'p15', text:'כשאני עצוב/ה ולא יודע/ת למה, זה...', category:'emotions', enabled:true },
-  { id:'p17', text:'כשכולם מסתכלים עלי, זה...', category:'emotions', enabled:true },
-  { id:'p19', text:'כשמצליח/ה במשהו קשה, זה...', category:'emotions', enabled:true },
-  { id:'p05', text:'ארוחת ערב משפחתית זה...', category:'family', enabled:true },
-  { id:'p07', text:'כשיש ריב עם חבר או חברה, זה...', category:'family', enabled:true },
-  { id:'p09', text:'כשחושב/ת על האח או האחות שלי, זה...', category:'family', enabled:true },
-  { id:'p18', text:'כשמישהו אומר משהו שפוגע, זה...', category:'family', enabled:true },
-  { id:'p29', text:'הדבר שהכי רוצה/ת שאנשים יבינו עלי הוא...', category:'family', enabled:true },
-  { id:'p21', text:'כשמופעלת אזעקה, זה...', category:'security', enabled:true },
-  { id:'p22', text:'ללכת למרחב המוגן באמצע הלילה זה...', category:'security', enabled:true },
-  { id:'p23', text:'כשאני שומע/ת חדשות, זה...', category:'security', enabled:true },
-  { id:'p24', text:'כשמדברים על המלחמה, אני...', category:'security', enabled:true },
-  { id:'p25', text:'כשחוזרים הביתה אחרי שהיינו בטוחים, זה...', category:'security', enabled:true },
-  { id:'p26', text:'הדבר שאני הכי מחכה/ה לו זה...', category:'future', enabled:true },
-  { id:'p27', text:'אם הייתי יכול/ה לשנות דבר אחד, זה...', category:'future', enabled:true },
-  { id:'p28', text:'כשאני חולם/ת על העתיד, זה...', category:'future', enabled:true },
-  { id:'p30', text:'כשהכל יהיה בסדר, זה ירגיש...', category:'future', enabled:true },
+  { id:'p04', text:'כשאני לבד.ה בחדר שלי...', category:'daily', enabled:true },
+  { id:'p05', text:'אני אוהב.ת ש...', category:'daily', enabled:true },
+  { id:'p06', text:'הכי משמח אותי ש...', category:'daily', enabled:true },
+  { id:'p07', text:'בארוחת ערב משפחתית אני...', category:'daily', enabled:true },
+  // רגשות
+  { id:'p08', text:'מעצבן אותי כש...', category:'emotions', enabled:true },
+  { id:'p09', text:'כשאני כועס.ת אני מרגיש.ה בגוף...', category:'emotions', enabled:true },
+  { id:'p10', text:'כולם הסתכלו עלי כש...', category:'emotions', enabled:true },
+  { id:'p11', text:'הסמקתי כש...', category:'emotions', enabled:true },
+  { id:'p12', text:'הפעם האחרונה שבכיתי הייתה כש...', category:'emotions', enabled:true },
+  { id:'p13', text:'אני חושש.ת שידעו עלי ש...', category:'emotions', enabled:true },
+  { id:'p14', text:'הייתי רוצה שידעו עלי ש...', category:'emotions', enabled:true },
+  { id:'p15', text:'במקומות חדשים אני...', category:'emotions', enabled:true },
+  { id:'p16', text:'העליב אותי ש...', category:'emotions', enabled:true },
+  { id:'p17', text:'כשמישהו מחבק אותי אני מרגיש.ה...', category:'emotions', enabled:true },
+  { id:'p18', text:'כשמישהו מבין אותי בלי מילים...', category:'emotions', enabled:true },
+  { id:'p19', text:'כשאני מצליח.ה במשהו קשה...', category:'emotions', enabled:true },
+  // משפחה וחברים
+  { id:'p20', text:'כשאני מתגעגע.ת למישהו...', category:'family', enabled:true },
+  { id:'p21', text:'כשיש ריב עם חבר.ה...', category:'family', enabled:true },
+  { id:'p22', text:'כשאני חושב.ת על האח/האחות שלי...', category:'family', enabled:true },
+  { id:'p23', text:'כשמישהו אומר משהו שפוגע...', category:'family', enabled:true },
+  { id:'p24', text:'הייתי רוצה שאנשים יבינו עלי ש...', category:'family', enabled:true },
+  { id:'p25', text:'כשאני משחק.ת עם חברים...', category:'family', enabled:true },
+  // ביטחון
+  { id:'p26', text:'כשיש אזעקה, הגוף שלי...', category:'security', enabled:true },
+  { id:'p27', text:'ללכת למרחב המוגן באמצע הלילה מרגיש...', category:'security', enabled:true },
+  { id:'p28', text:'כשאני שומע.ת חדשות...', category:'security', enabled:true },
+  { id:'p29', text:'כשמדברים על המלחמה, אני...', category:'security', enabled:true },
+  // עתיד וחלומות
+  { id:'p30', text:'הדבר שאני הכי מחכה לו הוא...', category:'future', enabled:true },
+  { id:'p31', text:'אם הייתי יכול.ה לשנות דבר אחד, הייתי משנה את...', category:'future', enabled:true },
+  { id:'p32', text:'כשאני חולם.ת על העתיד...', category:'future', enabled:true },
+  { id:'p33', text:'כשהכל יהיה בסדר, זה ירגיש...', category:'future', enabled:true },
   // דמיון ויצירה
-  { id:'p31', text:'אם הייתי יכול/ה לעוף, הייתי...', category:'creative', enabled:true },
-  { id:'p32', text:'הדמות שהכי הייתי רוצה להיות זה...', category:'creative', enabled:true },
-  { id:'p33', text:'אם הייתי מצייר/ת את הרגשות שלי עכשיו, זה היה...', category:'creative', enabled:true },
-  { id:'p34', text:'המקום הקסום שהייתי רוצה לברוח אליו הוא...', category:'creative', enabled:true },
-  { id:'p35', text:'אם היה לי יום שלם לעשות מה שרוצה, זה...', category:'creative', enabled:true },
+  { id:'p34', text:'אם הייתי יכול.ה לעוף, הייתי...', category:'creative', enabled:true },
+  { id:'p35', text:'הדמות שהכי הייתי רוצה להיות היא...', category:'creative', enabled:true },
+  { id:'p36', text:'הייתי רוצה להיות עכשיו ב...', category:'creative', enabled:true },
+  { id:'p37', text:'אם היה לי יום שלם לעשות מה שאני רוצה, הייתי...', category:'creative', enabled:true },
   // משחק ופנאי
-  { id:'p36', text:'הדבר שהכי משמח אותי מחוץ לבית ספר זה...', category:'play', enabled:true },
-  { id:'p37', text:'כשמשחק/ת עם חברים, הרגשה הכי טובה היא...', category:'play', enabled:true },
-  { id:'p38', text:'כשיש לי זמן חופשי לבד, אני...', category:'play', enabled:true },
-  { id:'p39', text:'המשחק או הסרט שהכי משפיע עלי הוא...', category:'play', enabled:true },
+  { id:'p38', text:'כשיש לי זמן לבד...', category:'play', enabled:true },
+  { id:'p39', text:'המשחק שאני הכי אוהב.ת הוא...', category:'play', enabled:true },
+  { id:'p40', text:'הסרט או הסדרה שאני הכי אוהב.ת...', category:'play', enabled:true },
+  // אם הייתי...
+  { id:'p41', text:'אם הייתי חיה, הייתי...', category:'imagine', enabled:true },
+  { id:'p42', text:'אם הייתי צבע, הייתי...', category:'imagine', enabled:true },
+  { id:'p43', text:'אם הייתי ממתק, הייתי...', category:'imagine', enabled:true },
+  { id:'p44', text:'כוח העל שהייתי רוצה שיהיה לי הוא...', category:'imagine', enabled:true },
+  { id:'p45', text:'הדבר המוזר שאני אוהב.ת הוא...', category:'imagine', enabled:true },
+  { id:'p46', text:'אם הייתי ממציא.ה משהו, הייתי ממציא.ה...', category:'imagine', enabled:true },
+  { id:'p47', text:'הדבר שאף אחד לא מאמין שאני אוהב.ת הוא...', category:'imagine', enabled:true },
 ];
 
 const TOTAL_CARDS = 95;
@@ -295,7 +310,7 @@ document.getElementById('btn-copy-link').addEventListener('click', () => {
   setTimeout(() => btn.textContent = '🔗 העתק לינק', 1500);
 });
 
-let _promptCounter = 40;
+let _promptCounter = 48;
 
 function renderPromptsScreen() {
   const container = document.getElementById('prompts-categories');
