@@ -118,34 +118,18 @@
       <!-- Instructions + sharing — manager only -->
       <div id="lobby-instructions" class="lobby-instructions hidden">
 
-        <p class="lobby-share-title">שתפ/י עם השחקנ.ית — בחר/י את הדרך הנוחה לך:</p>
+        <p class="lobby-share-title">שלח/י לשחקנ.ית את הלינק למשחק:</p>
 
-        <!-- Option A — direct link -->
-        <div class="lobby-share-option lobby-share-option--primary">
-          <div class="lobby-share-option-header">
-            <span class="lobby-share-badge">הכי קל</span>
-            <span class="lobby-share-desc">שלח/י לינק ישיר — השחקנ.ית פותח.ת אותו ורק מזין.ה שם</span>
-          </div>
-          <div class="lobby-step-row">
-            <span id="lobby-link-display" class="lobby-link-text"></span>
-            <button id="btn-copy-link" class="btn btn-primary btn-small">📋 העתק לינק</button>
-          </div>
-        </div>
-
-        <div class="lobby-share-or">או</div>
-
-        <!-- Option B — code only -->
-        <div class="lobby-share-option">
-          <div class="lobby-share-option-header">
-            <span class="lobby-share-desc">שלח/י את קוד החדר — השחקנ.ית נכנס.ת לאתר ומזין.ה אותו</span>
-          </div>
-          <div class="lobby-step-row">
-            <span id="display-code" class="lobby-code">-----</span>
-            <button id="btn-copy-code" class="btn btn-secondary btn-small">📋 העתק קוד</button>
-          </div>
+        <div class="lobby-step-row">
+          <span id="lobby-link-display" class="lobby-link-text"></span>
+          <button id="btn-copy-link" class="btn btn-primary btn-small">📋 העתק לינק</button>
         </div>
 
         <p class="lobby-share-hint">כשהשחקנ.ית מתחבר.ת — לחץ/י "התחל משחק" למטה</p>
+
+        <!-- hidden — kept for JS compatibility -->
+        <span id="display-code" style="display:none"></span>
+        <button id="btn-copy-code" style="display:none"></button>
       </div>
 
       <!-- Status -->
@@ -293,20 +277,25 @@
       <div class="settings-section">
         <h3 class="settings-section-title">סוג המשחק</h3>
         <div class="mode-options">
-          <div class="mode-card selected" data-mode="fixed">
-            <div class="mode-card-emoji">🎯</div>
-            <div class="mode-card-title">התאמת משפט לקלף</div>
-            <div class="mode-card-desc">משפט מוגרל — כל שחקנ.ית בוחר.ת קלף שמייצג אותה ומנסים לנחש את בחירת השני</div>
+          <div class="mode-card" data-mode="free-play">
+            <div class="mode-card-title">חפיסת קלפים</div>
+            <div class="mode-card-desc">עיון חופשי — הניחו קלפים על השולחן ושוחחו עליהם בלי תורות ובלי ניקוד</div>
+          </div>
+          <div class="mode-card" data-mode="shared-story">
+            <div class="mode-card-title">סיפור משותף</div>
+            <div class="mode-card-desc">שני השחקנים מגרילים קלפים ובונים יחד סיפור — כל אחד בתורו מניח קלף וכותב משפט</div>
+          </div>
+          <div class="mode-card" data-mode="story-contest">
+            <div class="mode-card-title">תחרות סיפורים</div>
+            <div class="mode-card-desc">כל שחקנ.ית מסדר.ת את אותם הקלפים בסדר שלה ויוצר.ת סיפור — בסוף משווים</div>
           </div>
           <div class="mode-card" data-mode="cards-only">
-            <div class="mode-card-emoji">🖼️</div>
             <div class="mode-card-title">משפט חופשי</div>
             <div class="mode-card-desc">השחקנ.ית הפעיל.ה בוחר.ת קלף וכותב.ת משפט שמתאים לו — השני מנחש איזה קלף נבחר</div>
           </div>
-          <div class="mode-card" data-mode="free-play">
-            <div class="mode-card-emoji">🃏</div>
-            <div class="mode-card-title">חפיסת קלפים</div>
-            <div class="mode-card-desc">עיון חופשי — בלי תורות ובלי ניקוד. הניחו קלפים על השולחן ושוחחו עליהם</div>
+          <div class="mode-card selected" data-mode="fixed">
+            <div class="mode-card-title">התאמת משפט לקלף</div>
+            <div class="mode-card-desc">משפט מוגרל — כל שחקנ.ית בוחר.ת קלף שמייצג אותה ומנסים לנחש את בחירת השני</div>
           </div>
         </div>
       </div>
@@ -469,6 +458,6 @@
     </div>
   </div>
 
-  <script type="module" src="game.js?v=12"></script>
+  <script type="module" src="game.js?v=13"></script>
 </body>
 </html>

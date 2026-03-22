@@ -390,11 +390,11 @@ document.querySelectorAll('.mode-card[data-mode]').forEach(card => {
     selectedChoiceMode = false;
     document.getElementById('toggle-choice-mode').checked = false;
     document.getElementById('choice-toggle-section').classList.toggle('hidden', selectedMode !== 'fixed');
-    document.getElementById('prompts-section').style.display =
-      selectedMode === 'cards-only' ? 'none' : '';
-    const isFreePlay = selectedMode === 'free-play';
-    document.getElementById('advanced-settings-panel').classList.toggle('hidden-by-mode', isFreePlay);
-    document.getElementById('btn-advanced-toggle').classList.toggle('hidden-by-mode', isFreePlay);
+    const noPrompts = ['cards-only', 'free-play', 'shared-story', 'story-contest'].includes(selectedMode);
+    document.getElementById('prompts-section').style.display = noPrompts ? 'none' : '';
+    const hideAdvanced = ['free-play', 'shared-story', 'story-contest'].includes(selectedMode);
+    document.getElementById('advanced-settings-panel').classList.toggle('hidden-by-mode', hideAdvanced);
+    document.getElementById('btn-advanced-toggle').classList.toggle('hidden-by-mode', hideAdvanced);
   });
 });
 
@@ -645,6 +645,8 @@ document.getElementById('btn-start').addEventListener('click', async () => {
   if (!room.childConnected) return showError('ממתינים לשחקן השני.');
   if (room.gameMode === 'free-play') {
     writeNewFreePlayGame();
+  } else if (room.gameMode === 'shared-story' || room.gameMode === 'story-contest') {
+    showError('מצב זה בפיתוח — יגיע בקרוב!');
   } else {
     writeNewRound(room, 'therapist', 1);
   }

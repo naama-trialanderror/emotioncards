@@ -561,7 +561,11 @@ input, textarea { font-family: var(--font); direction: rtl; }
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+}
+.lobby-instructions .lobby-step-row {
+  background: #eff6ff;
+  border-color: #bfdbfe;
 }
 
 .lobby-share-title {
