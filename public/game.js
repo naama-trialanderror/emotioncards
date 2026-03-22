@@ -188,6 +188,9 @@ document.querySelectorAll('.mode-card[data-mode]').forEach(card => {
     selectedMode = card.dataset.mode;
     document.getElementById('prompts-section').style.display =
       selectedMode === 'cards-only' ? 'none' : '';
+    const isFreePlay = selectedMode === 'free-play';
+    document.getElementById('advanced-settings-panel').classList.toggle('hidden-by-mode', isFreePlay);
+    document.getElementById('btn-advanced-toggle').classList.toggle('hidden-by-mode', isFreePlay);
   });
 });
 
@@ -264,7 +267,7 @@ document.getElementById('btn-join').addEventListener('click', async () => {
 
     showScreen('screen-lobby');
     document.getElementById('child-lobby-msg').classList.remove('hidden');
-    document.getElementById('lobby-status-text').textContent = `ממתינים ל${room.therapistName || 'המטפל/ת'}...`;
+    document.getElementById('lobby-status-text').textContent = `ממתינים ל${room.therapistName || 'מנהל.ת המשחק'}...`;
     listenToRoom(code);
   } catch (e) {
     showError('שגיאה בהצטרפות: ' + e.message);
@@ -634,8 +637,8 @@ function renderChoosePrompt(room, isActive) {
 // ── Header ────────────────────────────────────────────
 
 function renderHeader(room) {
-  document.getElementById('name-therapist').textContent  = room.therapistName || 'מטפל/ת';
-  document.getElementById('name-child').textContent      = room.childName     || 'ילד/ה';
+  document.getElementById('name-therapist').textContent  = room.therapistName || 'מנהל.ת';
+  document.getElementById('name-child').textContent      = room.childName     || 'שחקנ.ית';
   document.getElementById('score-therapist').textContent = room.therapistScore ?? 0;
   document.getElementById('score-child').textContent     = room.childScore    ?? 0;
   document.getElementById('round-badge').textContent     = `סיבוב ${room.round}`;
@@ -998,33 +1001,59 @@ function toHandCards(val) {
   return Object.values(val).map(Number).filter(Boolean);
 }
 
-// ── Create free-play room ─────────────────────────────
+// ── Advanced settings accordion ───────────────────────
 
-document.getElementById('btn-go-free-play').addEventListener('click', async () => {
-  const name = document.getElementById('therapist-name').value.trim();
-  if (!name) return showError('נא להזין שם');
+document.getElementById('btn-advanced-toggle').addEventListener('click', () => {
+  const btn   = document.getElementById('btn-advanced-toggle');
+  const panel = document.getElementById('advanced-settings-panel');
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
+  btn.textContent = isOpen ? 'הגדרות מתקדמות ▴' : 'הגדרות מתקדמות ▾';
+});
 
-  const code = generateCode();
-  roomCode = code;
-  myRole   = 'therapist';
+// ── Card browser ──────────────────────────────────────
 
-  try {
-    await set(ref(db, `rooms/${code}`), {
-      therapistName:  name,
-      childName:      null,
-      childConnected: false,
-      phase:          'lobby',
-      gameMode:       'free-play',
-      createdAt:      Date.now(),
+function populateCardBrowser() {
+  const grid = document.getElementById('card-browser-grid');
+  if (grid.childElementCount > 0) return; // already populated
+  for (let i = 1; i <= TOTAL_CARDS; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'browser-card';
+    const img = document.createElement('img');
+    img.src = `/cards/card_${String(i).padStart(2,'0')}.png`;
+    img.alt = `קלף ${i}`;
+    img.loading = 'lazy';
+    cell.appendChild(img);
+    cell.addEventListener('click', () => {
+      const zoomModal = document.getElementById('browser-zoom-modal');
+      document.getElementById('browser-zoom-img').src = img.src;
+      zoomModal.classList.remove('hidden');
     });
-  } catch (e) {
-    return showError('שגיאה בחיבור ל-Firebase: ' + e.message);
+    grid.appendChild(cell);
   }
+}
 
-  document.getElementById('display-code').textContent = code;
-  showScreen('screen-lobby');
-  document.getElementById('therapist-lobby-controls').classList.remove('hidden');
-  listenToRoom(code);
+document.getElementById('btn-open-card-browser').addEventListener('click', () => {
+  populateCardBrowser();
+  document.getElementById('card-browser-overlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+});
+
+document.getElementById('btn-close-card-browser').addEventListener('click', () => {
+  document.getElementById('card-browser-overlay').classList.add('hidden');
+  document.body.style.overflow = '';
+});
+
+document.getElementById('browser-zoom-modal').addEventListener('click', () => {
+  document.getElementById('browser-zoom-modal').classList.add('hidden');
+});
+
+// Close browser overlay on backdrop click
+document.getElementById('card-browser-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('card-browser-overlay')) {
+    document.getElementById('card-browser-overlay').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
 });
 
 // ── Start free-play ───────────────────────────────────
@@ -1049,8 +1078,8 @@ function renderFreePlay(room) {
   showScreen('screen-free-play');
 
   // Header
-  document.getElementById('fp-name-therapist').textContent  = room.therapistName || 'מטפל/ת';
-  document.getElementById('fp-name-child').textContent      = room.childName     || 'ילד/ה';
+  document.getElementById('fp-name-therapist').textContent  = room.therapistName || 'מנהל.ת';
+  document.getElementById('fp-name-child').textContent      = room.childName     || 'שחקנ.ית';
   document.getElementById('fp-count-therapist').textContent = room.therapistHandCount || 0;
   document.getElementById('fp-count-child').textContent     = room.childHandCount     || 0;
 
