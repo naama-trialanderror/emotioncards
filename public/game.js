@@ -291,12 +291,13 @@ function showPlayerView(code) {
   setTimeout(() => document.getElementById('child-name').focus(), 100);
 }
 
-document.getElementById('btn-switch-to-player').addEventListener('click', e => {
+// btn-switch-to-player removed from HTML; guard in case it exists in cached version
+const _switchToPlayer = document.getElementById('btn-switch-to-player');
+if (_switchToPlayer) _switchToPlayer.addEventListener('click', e => {
   e.preventDefault();
   showPlayerView('');
   document.getElementById('room-code-input').style.display = '';
   document.getElementById('room-code-input').placeholder = 'קוד חדר';
-  document.getElementById('player-join-desc').textContent = 'קיבלתם קוד חדר? הזינו אותו כאן';
 });
 
 document.getElementById('btn-switch-to-manager').addEventListener('click', e => {

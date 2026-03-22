@@ -1697,6 +1697,19 @@ input, textarea { font-family: var(--font); direction: rtl; }
   font-weight: 300;
 }
 
+/* Hidden cards grid: pointer not zoom */
+#hidden-cards-grid .browser-card { cursor: pointer; }
+
+/* Landing flow hint */
+.landing-flow-hint {
+  font-size: 13px;
+  color: var(--text-mid);
+  text-align: center;
+  font-weight: 300;
+  line-height: 1.55;
+  margin-top: -4px;
+}
+
 /* ── Hidden card cell state ── */
 .browser-card.hc-card-hidden {
   opacity: .42;
