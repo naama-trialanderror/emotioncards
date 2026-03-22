@@ -198,7 +198,8 @@ function loadManagerSettings() {
     if (s.name) document.getElementById('therapist-name').value = s.name;
     if (s.mode) {
       const isChoice = s.mode === 'choice';
-      selectedMode = isChoice ? 'fixed' : s.mode;
+      const isSoon = ['shared-story', 'story-contest'].includes(s.mode);
+      selectedMode = isChoice ? 'fixed' : (isSoon ? 'fixed' : s.mode);
       selectedChoiceMode = isChoice;
       document.querySelectorAll('.mode-card[data-mode]').forEach(c =>
         c.classList.toggle('selected', c.dataset.mode === selectedMode));
@@ -384,6 +385,7 @@ document.getElementById('btn-back-to-landing').addEventListener('click', () => {
 // Mode selection (pre-game)
 document.querySelectorAll('.mode-card[data-mode]').forEach(card => {
   card.addEventListener('click', () => {
+    if (card.classList.contains('mode-card--soon')) return;
     document.querySelectorAll('.mode-card[data-mode]').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     selectedMode = card.dataset.mode;
