@@ -1671,6 +1671,7 @@ function renderSharedStory(room) {
     const img = document.createElement('img');
     img.src = `/cards/card_${String(entry.cardId).padStart(2, '0')}.png`;
     img.className = 'ss-story-card-img';
+    img.addEventListener('click', () => showZoomModal(entry.cardId));
     const textBlock = document.createElement('div');
     textBlock.className = 'ss-story-text-block';
     const author = document.createElement('span');
