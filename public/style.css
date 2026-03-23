@@ -2554,3 +2554,52 @@ input, textarea { font-family: var(--font); direction: rtl; }
 .sc-reveal-card-img {
   cursor: zoom-in;
 }
+
+/* ── Lobby count picker ── */
+#lobby-count-picker .story-therapist-bar {
+  justify-content: center;
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+  padding-bottom: 8px;
+}
+
+/* ── Story mode therapist controls ── */
+.story-therapist-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 0 2px;
+  border-top: 1px solid var(--border);
+  margin-top: 6px;
+}
+.story-bar-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.count-chip {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: border-color var(--t), background var(--t), color var(--t);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.count-chip:hover { border-color: var(--border-dark); }
+.count-chip.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}

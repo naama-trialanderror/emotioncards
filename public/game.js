@@ -789,6 +789,20 @@ function renderLobby(room) {
     document.getElementById('lobby-instructions').classList.remove('hidden');
     document.getElementById('lobby-link-display').textContent =
       `${location.origin}/?join=${roomCode}`;
+
+    // Count picker — shown for story modes so therapist can set it before starting
+    const pickerEl = document.getElementById('lobby-count-picker');
+    pickerEl.innerHTML = '';
+    if (room.gameMode === 'shared-story') {
+      pickerEl.appendChild(
+        buildCountBar(room.cardsPerRound || 3, [2,3,4,5,6,7], 'קלפים לכל שחקן:')
+      );
+    } else if (room.gameMode === 'story-contest') {
+      pickerEl.appendChild(
+        buildCountBar(room.cardsPerRound || 5, [3,4,5,6,7,8], 'קלפים בסך הכל (לשניכם):')
+      );
+    }
+
     if (room.childConnected) {
       document.getElementById('lobby-status-text').textContent = `${room.childName} כאן! 🎉`;
       document.getElementById('lobby-spinner').classList.add('hidden');
@@ -1443,8 +1457,69 @@ function showZoomModal(cardId) {
 
 // ── Start shared-story ────────────────────────────────
 
+// ── Story mode helpers ────────────────────────────────
+
+/** Compact count-picker bar used by both story modes */
+function buildCountBar(currentCount, options, label) {
+  const bar = document.createElement('div');
+  bar.className = 'story-therapist-bar';
+  const lbl = document.createElement('span');
+  lbl.className = 'story-bar-label';
+  lbl.textContent = label;
+  bar.appendChild(lbl);
+  options.forEach(n => {
+    const btn = document.createElement('button');
+    btn.className = 'count-chip' + (currentCount === n ? ' active' : '');
+    btn.textContent = n;
+    btn.addEventListener('click', async () => {
+      await update(ref(db, `rooms/${roomCode}`), { cardsPerRound: n });
+      bar.querySelectorAll('.count-chip').forEach(b =>
+        b.classList.toggle('active', parseInt(b.textContent) === n));
+    });
+    bar.appendChild(btn);
+  });
+  return bar;
+}
+
+/** Deal 1 extra card to each player and extend the story by 2 turns */
+async function ssAddCard(room) {
+  const usedIds = new Set([
+    ...toHandCards(room.therapistHand),
+    ...toHandCards(room.childHand),
+    ...toStoryLine(room.storyLine).map(e => e.cardId),
+  ]);
+  const hidden = getHiddenCards();
+  const pool = shuffle(
+    Array.from({ length: TOTAL_CARDS }, (_, i) => i + 1)
+      .filter(c => !hidden.includes(c) && !usedIds.has(c))
+  );
+  if (pool.length < 2) return;
+  await update(ref(db, `rooms/${roomCode}`), {
+    therapistHand: [...toHandCards(room.therapistHand), pool[0]],
+    childHand:     [...toHandCards(room.childHand),     pool[1]],
+    therapistHandCount: (room.therapistHandCount || 0) + 1,
+    childHandCount:     (room.childHandCount     || 0) + 1,
+    maxTurns: (room.maxTurns || 6) + 2,
+  });
+}
+
+/** Add 1 extra card to the shared story-contest pool */
+async function scAddCard(room) {
+  if (room.therapistDone || room.childDone) return; // too late
+  const existing = new Set(toCards(room.cards));
+  const hidden = getHiddenCards();
+  const pool = shuffle(
+    Array.from({ length: TOTAL_CARDS }, (_, i) => i + 1)
+      .filter(c => !hidden.includes(c) && !existing.has(c))
+  );
+  if (pool.length < 1) return;
+  await update(ref(db, `rooms/${roomCode}`), {
+    cards: [...toCards(room.cards), pool[0]],
+  });
+}
+
 async function writeNewSharedStoryGame(room) {
-  const cardsPerPlayer = Math.min(room.cardsPerRound || 3, 5);
+  const cardsPerPlayer = Math.min(room.cardsPerRound || 3, 7);
   const hidden = getHiddenCards();
   const pool = shuffle(
     Array.from({ length: TOTAL_CARDS }, (_, i) => i + 1).filter(c => !hidden.includes(c))
@@ -1516,6 +1591,8 @@ function renderSharedStory(room) {
     doneMsg.textContent = '🎉 הסיפור הושלם!';
     actionEl.appendChild(doneMsg);
     if (myRole === 'therapist') {
+      const countBar = buildCountBar(room.cardsPerRound || 3, [2,3,4,5,6,7], 'קלפים לכל שחקן (לסיפור הבא):');
+      actionEl.appendChild(countBar);
       const btnRow = document.createElement('div');
       btnRow.className = 'story-end-btns';
       const newBtn = document.createElement('button');
@@ -1589,6 +1666,18 @@ function renderSharedStory(room) {
     waitDiv.innerHTML = `<div class="spinner small"></div><span>ממתינים ל${activeName} לבחור קלף...</span>`;
     actionEl.appendChild(waitDiv);
   }
+
+  // Therapist-only: add a card to both hands mid-story
+  if (myRole === 'therapist') {
+    const bar = document.createElement('div');
+    bar.className = 'story-therapist-bar';
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn btn-ghost btn-small';
+    addBtn.textContent = '+ קלף נוסף לכל שחקן';
+    addBtn.addEventListener('click', () => ssAddCard(room));
+    bar.appendChild(addBtn);
+    actionEl.appendChild(bar);
+  }
 }
 
 function ssSelectCard(cardId) {
@@ -1632,7 +1721,7 @@ async function ssSubmitCard(room, storyLine) {
 // ── Start story-contest ───────────────────────────────
 
 async function writeNewStoryContestGame(room) {
-  const count = Math.min(room.cardsPerRound || 5, 6);
+  const count = Math.min(room.cardsPerRound || 5, 8);
   const hidden = getHiddenCards();
   const pool = shuffle(
     Array.from({ length: TOTAL_CARDS }, (_, i) => i + 1).filter(c => !hidden.includes(c))
@@ -1772,6 +1861,17 @@ function renderStoryContest(room) {
   doneBtn.disabled = !allFilled;
   doneBtn.addEventListener('click', () => scSubmitStory(room));
   content.appendChild(doneBtn);
+
+  // Therapist-only controls: count for next round + add card to current round
+  if (myRole === 'therapist') {
+    const bar = buildCountBar(room.cardsPerRound || 5, [3,4,5,6,7,8], 'קלפים בסך הכל לשניכם (לתחרות הבאה):');
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn btn-ghost btn-small';
+    addBtn.textContent = '+ הוסף קלף';
+    addBtn.addEventListener('click', () => scAddCard(room));
+    bar.appendChild(addBtn);
+    content.appendChild(bar);
+  }
 }
 
 async function scSubmitStory(room) {
@@ -1827,6 +1927,8 @@ function renderStoryContestReveal(room, container) {
   container.appendChild(colsWrap);
 
   if (myRole === 'therapist') {
+    const countBar = buildCountBar(currentRoom.cardsPerRound || 5, [3,4,5,6,7,8], 'קלפים בסך הכל לשניכם (לתחרות הבאה):');
+    container.appendChild(countBar);
     const btnRow = document.createElement('div');
     btnRow.className = 'story-end-btns';
     const newBtn = document.createElement('button');
