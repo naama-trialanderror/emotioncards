@@ -1946,10 +1946,12 @@ function renderStoryContest(room) {
     availRow.className = 'sc-available-row';
     available.forEach(cardId => {
       const wrap = document.createElement('div');
-      wrap.className = 'sc-card-wrap-avail';
-      const card = buildCard(cardId);
-      card.classList.add('selectable');
-      card.addEventListener('click', () => {
+      wrap.className = 'sc-avail-card';
+      const img = document.createElement('img');
+      img.src = `/cards/card_${String(cardId).padStart(2, '0')}.png`;
+      img.className = 'sc-avail-img';
+      img.alt = `קלף ${cardId}`;
+      wrap.addEventListener('click', () => {
         setOrder([...myOrder, cardId]);
         renderStoryContest(room);
       });
@@ -1957,8 +1959,8 @@ function renderStoryContest(room) {
       zoomBtn.className = 'sc-card-zoom';
       zoomBtn.textContent = '🔍';
       zoomBtn.addEventListener('click', e => { e.stopPropagation(); showZoomModal(cardId); });
-      card.appendChild(zoomBtn);
-      wrap.appendChild(card);
+      wrap.appendChild(img);
+      wrap.appendChild(zoomBtn);
       availRow.appendChild(wrap);
     });
     content.appendChild(availRow);

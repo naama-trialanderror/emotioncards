@@ -2436,37 +2436,44 @@ input, textarea { font-family: var(--font); direction: rtl; }
   gap: 10px;
   flex-wrap: wrap;
 }
-.sc-card-wrap-avail {
+.sc-avail-card {
   position: relative;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
+  width: clamp(180px, 44vw, 240px);
+  aspect-ratio: 3 / 2;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  flex-shrink: 0;
+  transition: transform var(--t-lg) var(--ease), box-shadow var(--t-lg) var(--ease);
+}
+.sc-avail-card:hover { transform: scale(1.03); box-shadow: var(--shadow-lg); }
+.sc-avail-img {
+  display: block;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  background: #f2ede6;
 }
 .sc-card-zoom {
   position: absolute;
   top: 8px;
   left: 8px;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: rgba(255,255,255,.85);
+  background: rgba(255,255,255,.9);
   border: none;
-  font-size: 16px;
+  font-size: 17px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  backdrop-filter: blur(4px);
-  z-index: 5;
+  z-index: 2;
   transition: background var(--t), transform var(--t);
   line-height: 1;
-  box-shadow: 0 1px 4px rgba(0,0,0,.18);
+  box-shadow: 0 1px 6px rgba(0,0,0,.22);
 }
-.sc-card-zoom:hover { background: rgba(255,255,255,1); transform: scale(1.12); }
-.sc-available-row .card {
-  width: clamp(180px, 44vw, 240px);
-  flex-shrink: 0;
-}
+.sc-card-zoom:hover { background: #fff; transform: scale(1.12); }
 .sc-story-row {
   display: grid;
   grid-template-columns: auto 108px 28px 1fr;
