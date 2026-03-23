@@ -166,6 +166,15 @@ function toStoryLine(val) {
     .filter(Boolean);
 }
 
+function toNotesList(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.filter(Boolean);
+  return Object.entries(val)
+    .sort(([a], [b]) => parseInt(a) - parseInt(b))
+    .map(([, v]) => v)
+    .filter(Boolean);
+}
+
 // ── Screen management ─────────────────────────────────
 
 function showScreen(id) {
@@ -1824,8 +1833,8 @@ function renderFreePlay(room) {
   const tableEl = document.getElementById('fp-table-cards');
   tableEl.innerHTML = '';
   tableCards.forEach(cardId => {
-    const noteData = tableNotes[cardId] || null;
-    const el = fpBuildCard(cardId, 'לקחת לידיים', () => fpTakeFromTable(cardId), noteData, true);
+    const notesList = toNotesList(tableNotes[cardId]);
+    const el = fpBuildCard(cardId, 'לקחת לידיים', () => fpTakeFromTable(cardId), notesList, true);
     tableEl.appendChild(el);
   });
 
@@ -1837,12 +1846,15 @@ function renderFreePlay(room) {
   document.getElementById('fp-hand-count').textContent = myHand.length ? `(${myHand.length})` : '';
   document.getElementById('fp-hand-empty').style.display = myHand.length ? 'none' : '';
 
+  const myHandNotesKey = myRole === 'therapist' ? 'therapistHandNotes' : 'childHandNotes';
+  const myHandNotes = room[myHandNotesKey] || {};
   const handEl = document.getElementById('fp-hand-cards');
   handEl.innerHTML = '';
   myHand.forEach(cardId => {
+    const notesList = toNotesList(myHandNotes[cardId]);
     const btnText = tableIsFull ? 'שולחן מלא' : 'להניח על השולחן';
     const onClick = tableIsFull ? null : () => fpPlaceOnTable(cardId);
-    const el = fpBuildCard(cardId, btnText, onClick);
+    const el = fpBuildCard(cardId, btnText, onClick, notesList, false);
     if (tableIsFull) el.querySelector('.fp-card-btn').classList.add('fp-card-btn--disabled');
     handEl.appendChild(el);
   });
@@ -1851,8 +1863,7 @@ function renderFreePlay(room) {
   document.getElementById('fp-end-area').style.display = myRole === 'therapist' ? '' : 'none';
 }
 
-function fpBuildCard(cardId, btnText, onClick, noteData = null, isTableCard = false) {
-  // Wrapper holds the card + optional note paper beneath it
+function fpBuildCard(cardId, btnText, onClick, notesList = [], isTableCard = false) {
   const wrap = document.createElement('div');
   wrap.className = isTableCard ? 'fp-card-wrap' : 'fp-card-wrap fp-card-wrap--hand';
 
@@ -1875,15 +1886,13 @@ function fpBuildCard(cardId, btnText, onClick, noteData = null, isTableCard = fa
   zoomBtn.addEventListener('click', e => { e.stopPropagation(); fpShowCardModal(cardId); });
   div.appendChild(zoomBtn);
 
-  // Note button (table cards only)
-  if (isTableCard) {
-    const noteBtn = document.createElement('button');
-    noteBtn.className = 'fp-card-note-btn' + (noteData ? ' fp-card-note-btn--has-note' : '');
-    noteBtn.title = noteData ? 'עריכת פתק' : 'הוספת פתק';
-    noteBtn.textContent = noteData ? '✏️' : '📝';
-    noteBtn.addEventListener('click', e => { e.stopPropagation(); fpOpenNoteModal(cardId, noteData); });
-    div.appendChild(noteBtn);
-  }
+  // Note button — add new note (shown on both table and hand cards)
+  const noteBtn = document.createElement('button');
+  noteBtn.className = 'fp-card-note-btn';
+  noteBtn.title = 'הוספת פתק';
+  noteBtn.textContent = '📝';
+  noteBtn.addEventListener('click', e => { e.stopPropagation(); fpOpenNoteModal(cardId, isTableCard, -1, null); });
+  div.appendChild(noteBtn);
 
   const btn = document.createElement('button');
   btn.className = 'fp-card-btn';
@@ -1891,14 +1900,26 @@ function fpBuildCard(cardId, btnText, onClick, noteData = null, isTableCard = fa
   if (onClick) btn.addEventListener('click', e => { e.stopPropagation(); onClick(); });
   div.appendChild(btn);
 
-  // Note paper — appears below the card, not on top
-  if (noteData) {
+  // Note papers — one per note, each with its own edit button
+  notesList.forEach((note, idx) => {
     const paper = document.createElement('div');
     paper.className = 'fp-note-paper';
-    paper.style.background = noteData.color;
-    paper.textContent = noteData.text;
+    paper.style.background = note.color;
+
+    const textEl = document.createElement('span');
+    textEl.className = 'fp-note-paper-text';
+    textEl.textContent = note.text;
+    paper.appendChild(textEl);
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'fp-note-paper-edit';
+    editBtn.textContent = '✏️';
+    editBtn.title = 'עריכת פתק';
+    editBtn.addEventListener('click', e => { e.stopPropagation(); fpOpenNoteModal(cardId, isTableCard, idx, note); });
+    paper.appendChild(editBtn);
+
     wrap.appendChild(paper);
-  }
+  });
 
   return wrap;
 }
@@ -1952,48 +1973,69 @@ async function fpDeal() {
 
 async function fpTakeFromTable(cardId) {
   const room = currentRoom;
-  const tableCards = toTableCards(room.tableCards);
-  const myHandKey  = myRole === 'therapist' ? 'therapistHand' : 'childHand';
-  const myCountKey = myRole === 'therapist' ? 'therapistHandCount' : 'childHandCount';
-  const myHand     = toHandCards(room[myHandKey]);
+  const tableCards    = toTableCards(room.tableCards);
+  const myHandKey     = myRole === 'therapist' ? 'therapistHand'      : 'childHand';
+  const myCountKey    = myRole === 'therapist' ? 'therapistHandCount'  : 'childHandCount';
+  const myHandNotesKey = myRole === 'therapist' ? 'therapistHandNotes' : 'childHandNotes';
+  const myHand        = toHandCards(room[myHandKey]);
 
   const updates = {
     tableCards:   tableCards.filter(id => id !== cardId),
     [myHandKey]:  [...myHand, cardId],
     [myCountKey]: myHand.length + 1,
   };
-  if (room.tableNotes?.[cardId]) updates[`tableNotes/${cardId}`] = null;
+
+  // Move notes from table → hand (preserve them)
+  const tableNoteData = room.tableNotes?.[cardId];
+  if (tableNoteData != null) {
+    updates[`tableNotes/${cardId}`] = null;
+    updates[`${myHandNotesKey}/${cardId}`] = tableNoteData;
+  }
 
   await update(ref(db, `rooms/${roomCode}`), updates);
 }
 
 async function fpPlaceOnTable(cardId) {
   const room = currentRoom;
-  const tableCards = toTableCards(room.tableCards);
+  const tableCards     = toTableCards(room.tableCards);
   if (tableCards.length >= 4) return;
 
-  const myHandKey  = myRole === 'therapist' ? 'therapistHand' : 'childHand';
-  const myCountKey = myRole === 'therapist' ? 'therapistHandCount' : 'childHandCount';
-  const myHand     = toHandCards(room[myHandKey]);
+  const myHandKey      = myRole === 'therapist' ? 'therapistHand'      : 'childHand';
+  const myCountKey     = myRole === 'therapist' ? 'therapistHandCount'  : 'childHandCount';
+  const myHandNotesKey = myRole === 'therapist' ? 'therapistHandNotes'  : 'childHandNotes';
+  const myHand         = toHandCards(room[myHandKey]);
+  const handNoteData   = (room[myHandNotesKey] || {})[cardId];
 
-  await update(ref(db, `rooms/${roomCode}`), {
+  const updates = {
     tableCards:   [...tableCards, cardId],
     [myHandKey]:  myHand.filter(id => id !== cardId),
     [myCountKey]: myHand.length - 1,
-  });
+  };
+
+  // Move notes from hand → table (preserve them)
+  if (handNoteData != null) {
+    updates[`${myHandNotesKey}/${cardId}`] = null;
+    updates[`tableNotes/${cardId}`] = handNoteData;
+  }
+
+  await update(ref(db, `rooms/${roomCode}`), updates);
 }
 
 // ── Note modal ────────────────────────────────────────
 
 let fpCurrentNoteCardId = null;
 let fpCurrentNoteColor  = '#fff9c4';
+let fpCurrentNoteIsTable = true;
+let fpCurrentNoteIndex  = -1;   // -1 = new note
 
-function fpOpenNoteModal(cardId, existingNote) {
-  fpCurrentNoteCardId = cardId;
-  fpCurrentNoteColor  = existingNote?.color || '#fff9c4';
+function fpOpenNoteModal(cardId, isTable, noteIndex, existingNote) {
+  fpCurrentNoteCardId  = cardId;
+  fpCurrentNoteIsTable = isTable;
+  fpCurrentNoteIndex   = noteIndex;
+  fpCurrentNoteColor   = existingNote?.color || '#fff9c4';
 
   document.getElementById('fp-note-text').value = existingNote?.text || '';
-  document.getElementById('fp-note-delete').style.display = existingNote ? '' : 'none';
+  document.getElementById('fp-note-delete').style.display = noteIndex !== -1 ? '' : 'none';
   document.getElementById('fp-note-dialog').style.background = fpCurrentNoteColor;
 
   document.querySelectorAll('.fp-note-color').forEach(el => {
@@ -2007,17 +2049,45 @@ function fpOpenNoteModal(cardId, existingNote) {
 async function fpSaveNote() {
   const text = document.getElementById('fp-note-text').value.trim();
   if (!text || !fpCurrentNoteCardId) return;
-  await update(ref(db, `rooms/${roomCode}/tableNotes`), {
-    [fpCurrentNoteCardId]: { text, color: fpCurrentNoteColor },
-  });
+  const noteData = { text, color: fpCurrentNoteColor };
+  const cardId = fpCurrentNoteCardId;
+  const room = currentRoom;
+
+  let basePath, currentNotes;
+  if (fpCurrentNoteIsTable) {
+    basePath = `rooms/${roomCode}/tableNotes`;
+    currentNotes = toNotesList(room.tableNotes?.[cardId]);
+  } else {
+    const k = myRole === 'therapist' ? 'therapistHandNotes' : 'childHandNotes';
+    basePath = `rooms/${roomCode}/${k}`;
+    currentNotes = toNotesList(room[k]?.[cardId]);
+  }
+
+  const updated = fpCurrentNoteIndex === -1
+    ? [...currentNotes, noteData]
+    : currentNotes.map((n, i) => i === fpCurrentNoteIndex ? noteData : n);
+
+  await update(ref(db, basePath), { [cardId]: updated });
   document.getElementById('fp-note-modal').classList.add('hidden');
 }
 
 async function fpDeleteNote() {
-  if (!fpCurrentNoteCardId) return;
-  await update(ref(db, `rooms/${roomCode}`), {
-    [`tableNotes/${fpCurrentNoteCardId}`]: null,
-  });
+  if (!fpCurrentNoteCardId || fpCurrentNoteIndex === -1) return;
+  const cardId = fpCurrentNoteCardId;
+  const room = currentRoom;
+
+  let basePath, currentNotes;
+  if (fpCurrentNoteIsTable) {
+    basePath = `rooms/${roomCode}/tableNotes`;
+    currentNotes = toNotesList(room.tableNotes?.[cardId]);
+  } else {
+    const k = myRole === 'therapist' ? 'therapistHandNotes' : 'childHandNotes';
+    basePath = `rooms/${roomCode}/${k}`;
+    currentNotes = toNotesList(room[k]?.[cardId]);
+  }
+
+  const updated = currentNotes.filter((_, i) => i !== fpCurrentNoteIndex);
+  await update(ref(db, basePath), { [cardId]: updated.length ? updated : null });
   document.getElementById('fp-note-modal').classList.add('hidden');
 }
 
@@ -2033,6 +2103,18 @@ document.querySelectorAll('.fp-note-color').forEach(el => {
     document.getElementById('fp-note-dialog').style.background = fpCurrentNoteColor;
     document.querySelectorAll('.fp-note-color').forEach(e => e.classList.remove('active'));
     el.classList.add('active');
+  });
+});
+
+document.querySelectorAll('.fp-note-emoji').forEach(el => {
+  el.addEventListener('click', () => {
+    const textarea = document.getElementById('fp-note-text');
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const val = textarea.value;
+    const emoji = el.dataset.emoji;
+    textarea.value = val.slice(0, start) + emoji + val.slice(start);
+    textarea.selectionStart = textarea.selectionEnd = start + emoji.length;
+    textarea.focus();
   });
 });
 
