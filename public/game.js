@@ -1760,11 +1760,19 @@ function renderSharedStory(room) {
     const handRow = document.createElement('div');
     handRow.className = 'ss-hand-row';
     myHand.forEach(cardId => {
+      const wrap = document.createElement('div');
+      wrap.className = 'ss-hand-card-wrap';
       const card = buildCard(cardId);
       card.classList.add('selectable');
       card.classList.toggle('selected', ssSelectedCardId === cardId);
       card.addEventListener('click', () => ssSelectCard(cardId));
-      handRow.appendChild(card);
+      const zoomBtn = document.createElement('button');
+      zoomBtn.className = 'sc-card-zoom';
+      zoomBtn.textContent = '🔍';
+      zoomBtn.addEventListener('click', e => { e.stopPropagation(); showZoomModal(cardId); });
+      wrap.appendChild(card);
+      wrap.appendChild(zoomBtn);
+      handRow.appendChild(wrap);
     });
     actionEl.appendChild(handRow);
 

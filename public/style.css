@@ -2454,6 +2454,12 @@ input, textarea { font-family: var(--font); direction: rtl; }
   object-fit: contain;
   background: #f2ede6;
 }
+/* zoom button — used in sc-avail-card AND ss-hand-card-wrap */
+.ss-hand-card-wrap {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
 .sc-card-zoom {
   position: absolute;
   top: 8px;
@@ -2468,7 +2474,7 @@ input, textarea { font-family: var(--font); direction: rtl; }
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 2;
+  z-index: 20;
   transition: background var(--t), transform var(--t);
   line-height: 1;
   box-shadow: 0 1px 6px rgba(0,0,0,.22);
