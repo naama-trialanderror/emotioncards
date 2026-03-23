@@ -196,6 +196,7 @@
       </div>
       <div class="round-badge" id="round-badge">סיבוב 1</div>
       <div style="display:flex;gap:6px;align-items:center;">
+        <button id="btn-game-home" class="btn-header-back hidden">🏠</button>
         <button id="btn-game-back" class="btn-header-back hidden">→ חזור</button>
         <button id="btn-mid-settings" class="btn-mid-settings hidden">הגדרות</button>
       </div>
@@ -413,7 +414,10 @@
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
         <span class="fp-header-title">חפיסת קלפים</span>
-        <button id="btn-fp-back" class="btn-header-back hidden">→ חזור</button>
+        <div style="display:flex;gap:6px;">
+          <button id="btn-fp-home" class="btn-header-back hidden">🏠</button>
+          <button id="btn-fp-back" class="btn-header-back hidden">→ חזור</button>
+        </div>
       </div>
       <div class="fp-player-block fp-player-right">
         <span class="fp-player-name" id="fp-name-child">שחקנ.ית</span>
@@ -519,7 +523,10 @@
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
         <span class="ss-header-title">סיפור משותף</span>
-        <button id="btn-ss-back" class="btn-header-back hidden">→ חזור</button>
+        <div style="display:flex;gap:6px;">
+          <button id="btn-ss-home" class="btn-header-back hidden">🏠</button>
+          <button id="btn-ss-back" class="btn-header-back hidden">→ חזור</button>
+        </div>
       </div>
       <div class="ss-player-block" style="text-align:left;">
         <span id="ss-name-child" class="ss-player-name">שחקנ.ית</span>
@@ -544,7 +551,10 @@
     <header class="sc-header">
       <span class="sc-header-title">תחרות סיפורים</span>
       <span id="sc-status" class="sc-status"></span>
-      <button id="btn-sc-back" class="btn-header-back hidden">→ חזור</button>
+      <div style="display:flex;gap:6px;">
+        <button id="btn-sc-home" class="btn-header-back hidden">🏠</button>
+        <button id="btn-sc-back" class="btn-header-back hidden">→ חזור</button>
+      </div>
     </header>
     <div id="sc-content" class="sc-content"></div>
     <footer class="brand-footer">

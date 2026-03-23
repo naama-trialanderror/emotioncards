@@ -604,6 +604,11 @@ document.getElementById('local-pass-btn').addEventListener('click', () => {
   document.getElementById(id).addEventListener('click', () => backToLobby());
 });
 
+// Home buttons — go to settings to choose a different game
+['btn-game-home','btn-ss-home','btn-sc-home','btn-fp-home'].forEach(id => {
+  document.getElementById(id).addEventListener('click', () => goChooseGame());
+});
+
 let _promptCounter = 48;
 
 function renderPromptsScreen() {
@@ -993,6 +998,7 @@ function renderHeader(room) {
   const canSettings = myRole === 'therapist' || room.childCanSettings;
   document.getElementById('btn-mid-settings').classList.toggle('hidden', !canSettings);
   document.getElementById('btn-game-back').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
+  document.getElementById('btn-game-home').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
 }
 
 // ── Mid-game settings ─────────────────────────────────
@@ -1551,6 +1557,11 @@ async function backToLobby() {
   await update(ref(db, `rooms/${roomCode}`), { phase: 'lobby' });
 }
 
+function goChooseGame() {
+  renderPromptsScreen();
+  showScreen('screen-settings');
+}
+
 function showZoomModal(cardId) {
   const src = `/cards/card_${String(cardId).padStart(2, '0')}.png`;
   document.getElementById('browser-zoom-img').src = src;
@@ -1648,6 +1659,7 @@ function renderSharedStory(room) {
   document.getElementById('ss-name-therapist').textContent = room.therapistName || 'מנהל.ת';
   document.getElementById('ss-name-child').textContent = room.childName || 'שחקנ.ית';
   document.getElementById('btn-ss-back').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
+  document.getElementById('btn-ss-home').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
 
   const storyLine = toStoryLine(room.storyLine);
   const maxTurns = room.maxTurns || 6;
@@ -1866,6 +1878,7 @@ async function writeNewStoryContestGame(room) {
 function renderStoryContest(room) {
   showScreen('screen-story-contest');
   document.getElementById('btn-sc-back').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
+  document.getElementById('btn-sc-home').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
   const cards = toCards(room.cards);
   const eRole = effectiveRole(room);
   const myDoneKey    = eRole === 'therapist' ? 'therapistDone' : 'childDone';
@@ -2187,6 +2200,7 @@ function renderStoryContestReveal(room, container) {
 function renderFreePlay(room) {
   showScreen('screen-free-play');
   document.getElementById('btn-fp-back').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
+  document.getElementById('btn-fp-home').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
 
   // Header
   document.getElementById('fp-name-therapist').textContent  = room.therapistName || 'מנהל.ת';
