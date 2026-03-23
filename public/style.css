@@ -1611,27 +1611,28 @@ input, textarea { font-family: var(--font); direction: rtl; }
   width: 100%;
   background: var(--bg-soft);
   border-top: 1px solid var(--border);
-  padding: 10px 20px;
+  padding: 8px 16px;
   margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex-wrap: nowrap;
 }
 .brand-footer-main {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   text-decoration: none;
   color: var(--text-mid);
   opacity: 0.75;
   transition: opacity var(--t);
   min-width: 0;
+  flex: 1;
 }
 .brand-footer-main:hover { opacity: 1; }
 .brand-footer-logo {
-  height: 36px;
+  height: 28px;
   width: auto;
   object-fit: contain;
   flex-shrink: 0;
