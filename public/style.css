@@ -1611,7 +1611,7 @@ input, textarea { font-family: var(--font); direction: rtl; }
   width: 100%;
   background: var(--bg-soft);
   border-top: 1px solid var(--border);
-  padding: 10px 16px;
+  padding: 14px 20px;
   margin-top: auto;
   display: flex;
   align-items: center;
@@ -1637,7 +1637,7 @@ input, textarea { font-family: var(--font); direction: rtl; }
   flex-shrink: 0;
 }
 .brand-footer-text {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-mid);
   white-space: nowrap;
 }
@@ -2282,16 +2282,17 @@ input, textarea { font-family: var(--font); direction: rtl; }
 }
 .ss-story-item {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
   background: var(--bg);
   border-radius: var(--r);
   padding: 10px 12px;
   box-shadow: var(--shadow-xs);
 }
 .ss-story-card-img {
-  width: 100%;
+  width: 120px;
+  flex-shrink: 0;
   height: auto;
   border-radius: var(--r-sm);
   object-fit: cover;
