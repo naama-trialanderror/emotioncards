@@ -1611,28 +1611,27 @@ input, textarea { font-family: var(--font); direction: rtl; }
   width: 100%;
   background: var(--bg-soft);
   border-top: 1px solid var(--border);
-  padding: 8px 16px;
+  padding: 10px 16px;
   margin-top: auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .brand-footer-main {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   text-decoration: none;
   color: var(--text-mid);
   opacity: 0.75;
   transition: opacity var(--t);
-  min-width: 0;
-  flex: 1;
+  flex-shrink: 0;
 }
 .brand-footer-main:hover { opacity: 1; }
 .brand-footer-logo {
-  height: 28px;
+  height: 40px;
   width: auto;
   object-fit: contain;
   flex-shrink: 0;
@@ -1641,8 +1640,6 @@ input, textarea { font-family: var(--font); direction: rtl; }
   font-size: 12px;
   color: var(--text-mid);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .brand-footer-pills {
   display: flex;
