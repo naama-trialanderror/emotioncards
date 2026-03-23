@@ -2598,6 +2598,27 @@ input, textarea { font-family: var(--font); direction: rtl; }
   cursor: zoom-in;
 }
 
+/* ── Drag-and-drop (Sortable.js) ── */
+.drag-ghost {
+  opacity: 0.25 !important;
+  background: var(--accent-light) !important;
+  border-radius: var(--r);
+}
+.drag-chosen {
+  box-shadow: var(--shadow-lg) !important;
+  transform: scale(1.02);
+  z-index: 10;
+  position: relative;
+}
+.ss-story-item {
+  cursor: grab;
+  touch-action: none;
+}
+.ss-story-item:active { cursor: grabbing; }
+.fp-card-wrap { touch-action: none; }
+.sc-story-row { touch-action: none; }
+.sc-story-list { display: flex; flex-direction: column; gap: 8px; }
+
 /* ── Header back button (mid-game) ── */
 .btn-header-back {
   font-size: 12px;

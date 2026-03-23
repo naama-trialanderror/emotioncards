@@ -125,6 +125,7 @@ let localCurrentRole  = 'therapist';   // 'therapist' | 'child'
 let prevActivePlayerLocal = null;       // detect activePlayer changes
 let localPassVisible  = false;          // is the pass-screen showing?
 let storyPickerPending = null;          // 'shared' | 'contest' | null — count picker flow
+let _scSortable = null;                 // Sortable instance for story-contest ordered list
 // Role-keyed story-contest arrays (so each player has their own local state)
 let scTherapistOrder = [];
 let scTherapistSentences = {};
@@ -1663,9 +1664,10 @@ function renderSharedStory(room) {
     empty.textContent = 'הסיפור מתחיל כאן...';
     storyEl.appendChild(empty);
   }
-  storyLine.forEach(entry => {
+  storyLine.forEach((entry, idx) => {
     const item = document.createElement('div');
     item.className = 'ss-story-item';
+    item.dataset.storyIdx = String(idx);
     const img = document.createElement('img');
     img.src = `/cards/card_${String(entry.cardId).padStart(2, '0')}.png`;
     img.className = 'ss-story-card-img';
@@ -1967,11 +1969,16 @@ function renderStoryContest(room) {
     storyHeader.textContent = 'הסיפור שלך';
     content.appendChild(storyHeader);
 
+    // Sub-container for sortable rows
+    const storyListEl = document.createElement('div');
+    storyListEl.className = 'sc-story-list';
+
     myOrder.forEach((cardId, idx) => {
       const row = document.createElement('div');
       row.className = 'sc-story-row';
+      row.dataset.cardId = String(cardId);
 
-      // Move column: number + up/down buttons
+      // Move column: number + up/down buttons (kept as fallback / desktop alternative)
       const moveCol = document.createElement('div');
       moveCol.className = 'sc-story-move-col';
       const numEl = document.createElement('span');
@@ -2031,8 +2038,30 @@ function renderStoryContest(room) {
       row.appendChild(cardImg);
       row.appendChild(removeBtn);
       row.appendChild(textarea);
-      content.appendChild(row);
+      storyListEl.appendChild(row);
     });
+
+    content.appendChild(storyListEl);
+
+    // Drag-and-drop reorder (Sortable.js)
+    if (_scSortable) { _scSortable.destroy(); _scSortable = null; }
+    if (typeof Sortable !== 'undefined' && myOrder.length > 1) {
+      const snapOrder = myOrder;       // captured from this render
+      const snapSetOrder = setOrder;   // captured setter
+      _scSortable = Sortable.create(storyListEl, {
+        animation: 150,
+        ghostClass: 'drag-ghost',
+        chosenClass: 'drag-chosen',
+        onEnd(evt) {
+          if (evt.oldIndex === evt.newIndex) return;
+          const newOrder = [...snapOrder];
+          const [moved] = newOrder.splice(evt.oldIndex, 1);
+          newOrder.splice(evt.newIndex, 0, moved);
+          snapSetOrder(newOrder);
+          render(currentRoom);
+        },
+      });
+    }
   }
 
   const allPlaced = myOrder.length === cards.length;
@@ -2210,6 +2239,7 @@ function renderFreePlay(room) {
 function fpBuildCard(cardId, btnText, onClick, notesList = [], isTableCard = false) {
   const wrap = document.createElement('div');
   wrap.className = isTableCard ? 'fp-card-wrap' : 'fp-card-wrap fp-card-wrap--hand';
+  if (isTableCard) wrap.dataset.cardId = String(cardId);
 
   const div = document.createElement('div');
   div.className = 'fp-card';
@@ -2467,3 +2497,40 @@ document.querySelectorAll('.fp-note-emoji').forEach(el => {
 document.getElementById('btn-fp-flip').addEventListener('click', fpFlipCard);
 document.getElementById('btn-fp-deal').addEventListener('click', fpDeal);
 document.getElementById('btn-fp-end').addEventListener('click', () => { clearSession(); location.reload(); });
+
+// ── Drag-and-drop (Sortable.js) ───────────────────────
+
+if (typeof Sortable !== 'undefined') {
+  // Free-play table: reorder cards on the shared table
+  Sortable.create(document.getElementById('fp-table-cards'), {
+    animation: 150,
+    ghostClass: 'drag-ghost',
+    chosenClass: 'drag-chosen',
+    onEnd(evt) {
+      if (!currentRoom || !roomCode || evt.oldIndex === evt.newIndex) return;
+      const arr = toTableCards(currentRoom.tableCards);
+      const newArr = [...arr];
+      const [moved] = newArr.splice(evt.oldIndex, 1);
+      newArr.splice(evt.newIndex, 0, moved);
+      update(ref(db, `rooms/${roomCode}`), { tableCards: newArr });
+    },
+  });
+
+  // Shared story: reorder story entries
+  Sortable.create(document.getElementById('ss-story-area'), {
+    animation: 150,
+    ghostClass: 'drag-ghost',
+    chosenClass: 'drag-chosen',
+    draggable: '.ss-story-item',
+    onEnd(evt) {
+      if (!currentRoom || !roomCode || evt.oldIndex === evt.newIndex) return;
+      const line = toStoryLine(currentRoom.storyLine);
+      const newLine = [...line];
+      const [moved] = newLine.splice(evt.oldIndex, 1);
+      newLine.splice(evt.newIndex, 0, moved);
+      const obj = {};
+      newLine.forEach((entry, i) => { obj[i] = entry; });
+      update(ref(db, `rooms/${roomCode}`), { storyLine: obj });
+    },
+  });
+}
