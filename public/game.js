@@ -1957,8 +1957,8 @@ function renderStoryContest(room) {
       zoomBtn.className = 'sc-card-zoom';
       zoomBtn.textContent = '🔍';
       zoomBtn.addEventListener('click', e => { e.stopPropagation(); showZoomModal(cardId); });
+      card.appendChild(zoomBtn);
       wrap.appendChild(card);
-      wrap.appendChild(zoomBtn);
       availRow.appendChild(wrap);
     });
     content.appendChild(availRow);
