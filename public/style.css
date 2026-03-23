@@ -2463,7 +2463,7 @@ input, textarea { font-family: var(--font); direction: rtl; }
 }
 .sc-card-zoom:hover { background: rgba(255,255,255,1); transform: scale(1.1); }
 .sc-available-row .card {
-  width: 160px;
+  width: clamp(180px, 44vw, 240px);
   flex-shrink: 0;
 }
 .sc-story-row {
