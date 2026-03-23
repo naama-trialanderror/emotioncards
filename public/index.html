@@ -195,7 +195,10 @@
         <span class="score-value" id="score-therapist">0</span>
       </div>
       <div class="round-badge" id="round-badge">סיבוב 1</div>
-      <button id="btn-mid-settings" class="btn-mid-settings hidden">הגדרות</button>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button id="btn-game-back" class="btn-header-back hidden">→ חזור</button>
+        <button id="btn-mid-settings" class="btn-mid-settings hidden">הגדרות</button>
+      </div>
       <div class="score-block" id="score-block-child">
         <span class="score-name" id="name-child">שחקנ.ית</span>
         <span class="score-value" id="score-child">0</span>
@@ -397,7 +400,10 @@
         <span class="fp-player-name" id="fp-name-therapist">מנהל.ת</span>
         <span class="fp-player-hand">🃏 <span id="fp-count-therapist">0</span></span>
       </div>
-      <span class="fp-header-title">חפיסת קלפים</span>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <span class="fp-header-title">חפיסת קלפים</span>
+        <button id="btn-fp-back" class="btn-header-back hidden">→ חזור</button>
+      </div>
       <div class="fp-player-block fp-player-right">
         <span class="fp-player-name" id="fp-name-child">שחקנ.ית</span>
         <span class="fp-player-hand">🃏 <span id="fp-count-child">0</span></span>
@@ -489,8 +495,11 @@
       <div class="ss-player-block">
         <span id="ss-name-therapist" class="ss-player-name">מנהל.ת</span>
       </div>
-      <span class="ss-header-title">סיפור משותף</span>
-      <div class="ss-player-block">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <span class="ss-header-title">סיפור משותף</span>
+        <button id="btn-ss-back" class="btn-header-back hidden">→ חזור</button>
+      </div>
+      <div class="ss-player-block" style="text-align:left;">
         <span id="ss-name-child" class="ss-player-name">שחקנ.ית</span>
       </div>
     </header>
@@ -503,6 +512,7 @@
     <header class="sc-header">
       <span class="sc-header-title">תחרות סיפורים</span>
       <span id="sc-status" class="sc-status"></span>
+      <button id="btn-sc-back" class="btn-header-back hidden">→ חזור</button>
     </header>
     <div id="sc-content" class="sc-content"></div>
   </div>
@@ -529,6 +539,6 @@
     </div>
   </div>
 
-  <script type="module" src="game.js?v=22"></script>
+  <script type="module" src="game.js?v=23"></script>
 </body>
 </html>

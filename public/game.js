@@ -124,6 +124,7 @@ let localChildNameVal = '';
 let localCurrentRole  = 'therapist';   // 'therapist' | 'child'
 let prevActivePlayerLocal = null;       // detect activePlayer changes
 let localPassVisible  = false;          // is the pass-screen showing?
+let storyPickerPending = null;          // 'shared' | 'contest' | null — count picker flow
 // Role-keyed story-contest arrays (so each player has their own local state)
 let scTherapistOrder = [];
 let scTherapistSentences = {};
@@ -416,6 +417,9 @@ document.querySelectorAll('.play-mode-opt').forEach(btn => {
     const isLocal = selectedPlayMode === 'one-screen';
     document.getElementById('local-child-name-wrap').classList.toggle('hidden', !isLocal);
     document.getElementById('landing-flow-hint').classList.toggle('hidden', isLocal);
+    // Update form placeholders for symmetric single-screen naming
+    document.getElementById('therapist-name').placeholder = isLocal ? 'שם שחקן 1' : 'השם שלך';
+    document.getElementById('local-child-name').placeholder = isLocal ? 'שם שחקן 2' : 'שם השחקנ.ית';
   });
 });
 
@@ -592,6 +596,11 @@ document.getElementById('local-pass-btn').addEventListener('click', () => {
   localPassVisible = false;
   document.getElementById('local-pass-overlay').classList.add('hidden');
   render(currentRoom);
+});
+
+// Back-to-lobby buttons (all game screens)
+['btn-game-back','btn-ss-back','btn-sc-back','btn-fp-back'].forEach(id => {
+  document.getElementById(id).addEventListener('click', () => backToLobby());
 });
 
 let _promptCounter = 48;
@@ -800,6 +809,7 @@ function render(room) {
     scTherapistSentences = {};
     scChildOrder = [];
     scChildSentences = {};
+    storyPickerPending = null;
     prevPhase = room.phase;
     prevActivePlayerLocal = null;
     localPassVisible = false;
@@ -864,13 +874,21 @@ function renderLobby(room) {
   if (myRole === 'therapist') {
     document.getElementById('therapist-lobby-controls').classList.remove('hidden');
 
-    // Count picker for story modes
+    // Count picker for story modes (initial game)
     const pickerEl = document.getElementById('lobby-count-picker');
     pickerEl.innerHTML = '';
     if (room.gameMode === 'shared-story') {
-      pickerEl.appendChild(buildCountBar(room.cardsPerRound || 3, [2,3,4,5,6,7], 'קלפים לכל שחקן:'));
+      pickerEl.appendChild(buildCountBar(room.cardsPerRound || 3, [2,3,4,5,6,7,8,9,10], 'קלפים לכל שחקן:'));
     } else if (room.gameMode === 'story-contest') {
-      pickerEl.appendChild(buildCountBar(room.cardsPerRound || 5, [3,4,5,6,7,8], 'קלפים בסך הכל (לשניכם):'));
+      pickerEl.appendChild(buildCountBar(room.cardsPerRound || 5, [3,4,5,6,7,8,9,10], 'קלפים בסך הכל (לשניכם):'));
+    }
+
+    // Single-screen warning for non-story modes
+    if (room.localPlay && ['fixed','cards-only','choice'].includes(room.gameMode)) {
+      const hint = document.createElement('p');
+      hint.className = 'one-screen-hint';
+      hint.textContent = '💡 המשחק הזה עובד טוב יותר עם שני מסכים — כל שחקן רואה את בחירות השני';
+      pickerEl.appendChild(hint);
     }
 
     if (room.localPlay) {
@@ -973,6 +991,7 @@ function renderHeader(room) {
 
   const canSettings = myRole === 'therapist' || room.childCanSettings;
   document.getElementById('btn-mid-settings').classList.toggle('hidden', !canSettings);
+  document.getElementById('btn-game-back').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
 }
 
 // ── Mid-game settings ─────────────────────────────────
@@ -1601,7 +1620,7 @@ async function scAddCard(room) {
 }
 
 async function writeNewSharedStoryGame(room) {
-  const cardsPerPlayer = Math.min(room.cardsPerRound || 3, 7);
+  const cardsPerPlayer = Math.min(room.cardsPerRound || 3, 10);
   const hidden = getHiddenCards();
   const pool = shuffle(
     Array.from({ length: TOTAL_CARDS }, (_, i) => i + 1).filter(c => !hidden.includes(c))
@@ -1627,6 +1646,7 @@ function renderSharedStory(room) {
   showScreen('screen-shared-story');
   document.getElementById('ss-name-therapist').textContent = room.therapistName || 'מנהל.ת';
   document.getElementById('ss-name-child').textContent = room.childName || 'שחקנ.ית';
+  document.getElementById('btn-ss-back').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
 
   const storyLine = toStoryLine(room.storyLine);
   const maxTurns = room.maxTurns || 6;
@@ -1674,26 +1694,41 @@ function renderSharedStory(room) {
     doneMsg.textContent = '🎉 הסיפור הושלם!';
     actionEl.appendChild(doneMsg);
     if (myRole === 'therapist') {
-      const countBar = buildCountBar(room.cardsPerRound || 3, [2,3,4,5,6,7], 'קלפים לכל שחקן (לסיפור הבא):');
-      actionEl.appendChild(countBar);
-      const btnRow = document.createElement('div');
-      btnRow.className = 'story-end-btns';
-      const newBtn = document.createElement('button');
-      newBtn.className = 'btn btn-primary';
-      newBtn.textContent = '← סיפור חדש';
-      newBtn.addEventListener('click', () => writeNewSharedStoryGame(currentRoom));
-      const otherBtn = document.createElement('button');
-      otherBtn.className = 'btn btn-secondary';
-      otherBtn.textContent = 'משחק אחר';
-      otherBtn.addEventListener('click', () => backToLobby());
-      const endBtn = document.createElement('button');
-      endBtn.className = 'btn btn-ghost btn-small';
-      endBtn.textContent = 'סיום שיחה';
-      endBtn.addEventListener('click', () => { clearSession(); location.reload(); });
-      btnRow.appendChild(newBtn);
-      btnRow.appendChild(otherBtn);
-      btnRow.appendChild(endBtn);
-      actionEl.appendChild(btnRow);
+      if (storyPickerPending === 'shared') {
+        // Show count picker then start
+        const wrap = document.createElement('div');
+        wrap.className = 'story-picker-wrap';
+        const countBar = buildCountBar(room.cardsPerRound || 3, [2,3,4,5,6,7,8,9,10], 'קלפים לכל שחקן:');
+        wrap.appendChild(countBar);
+        const startBtn = document.createElement('button');
+        startBtn.className = 'btn btn-primary';
+        startBtn.textContent = 'התחל סיפור ◀';
+        startBtn.addEventListener('click', () => {
+          storyPickerPending = null;
+          writeNewSharedStoryGame(currentRoom);
+        });
+        wrap.appendChild(startBtn);
+        actionEl.appendChild(wrap);
+      } else {
+        const btnRow = document.createElement('div');
+        btnRow.className = 'story-end-btns';
+        const newBtn = document.createElement('button');
+        newBtn.className = 'btn btn-primary';
+        newBtn.textContent = '← סיפור חדש';
+        newBtn.addEventListener('click', () => { storyPickerPending = 'shared'; render(currentRoom); });
+        const otherBtn = document.createElement('button');
+        otherBtn.className = 'btn btn-secondary';
+        otherBtn.textContent = 'משחק אחר';
+        otherBtn.addEventListener('click', () => backToLobby());
+        const endBtn = document.createElement('button');
+        endBtn.className = 'btn btn-ghost btn-small';
+        endBtn.textContent = 'סיום שיחה';
+        endBtn.addEventListener('click', () => { clearSession(); location.reload(); });
+        btnRow.appendChild(newBtn);
+        btnRow.appendChild(otherBtn);
+        btnRow.appendChild(endBtn);
+        actionEl.appendChild(btnRow);
+      }
     }
     return;
   }
@@ -1805,7 +1840,7 @@ async function ssSubmitCard(room, storyLine) {
 // ── Start story-contest ───────────────────────────────
 
 async function writeNewStoryContestGame(room) {
-  const count = Math.min(room.cardsPerRound || 5, 8);
+  const count = Math.min(room.cardsPerRound || 5, 10);
   const hidden = getHiddenCards();
   const pool = shuffle(
     Array.from({ length: TOTAL_CARDS }, (_, i) => i + 1).filter(c => !hidden.includes(c))
@@ -1827,6 +1862,7 @@ async function writeNewStoryContestGame(room) {
 
 function renderStoryContest(room) {
   showScreen('screen-story-contest');
+  document.getElementById('btn-sc-back').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
   const cards = toCards(room.cards);
   const eRole = effectiveRole(room);
   const myDoneKey    = eRole === 'therapist' ? 'therapistDone' : 'childDone';
@@ -1935,9 +1971,37 @@ function renderStoryContest(room) {
       const row = document.createElement('div');
       row.className = 'sc-story-row';
 
+      // Move column: number + up/down buttons
+      const moveCol = document.createElement('div');
+      moveCol.className = 'sc-story-move-col';
       const numEl = document.createElement('span');
       numEl.className = 'sc-story-num';
       numEl.textContent = `${idx + 1}`;
+      const upBtn = document.createElement('button');
+      upBtn.className = 'sc-move-btn';
+      upBtn.textContent = '↑';
+      upBtn.title = 'העלה';
+      upBtn.disabled = idx === 0;
+      upBtn.addEventListener('click', () => {
+        const newOrder = [...myOrder];
+        [newOrder[idx - 1], newOrder[idx]] = [newOrder[idx], newOrder[idx - 1]];
+        setOrder(newOrder);
+        renderStoryContest(room);
+      });
+      const downBtn = document.createElement('button');
+      downBtn.className = 'sc-move-btn';
+      downBtn.textContent = '↓';
+      downBtn.title = 'הורד';
+      downBtn.disabled = idx === myOrder.length - 1;
+      downBtn.addEventListener('click', () => {
+        const newOrder = [...myOrder];
+        [newOrder[idx + 1], newOrder[idx]] = [newOrder[idx], newOrder[idx + 1]];
+        setOrder(newOrder);
+        renderStoryContest(room);
+      });
+      moveCol.appendChild(numEl);
+      moveCol.appendChild(upBtn);
+      moveCol.appendChild(downBtn);
 
       const cardImg = document.createElement('img');
       cardImg.src = `/cards/card_${String(cardId).padStart(2, '0')}.png`;
@@ -1963,7 +2027,7 @@ function renderStoryContest(room) {
       textarea.value = mySentences[cardId] || '';
       textarea.addEventListener('input', () => setSentence(cardId, textarea.value));
 
-      row.appendChild(numEl);
+      row.appendChild(moveCol);
       row.appendChild(cardImg);
       row.appendChild(removeBtn);
       row.appendChild(textarea);
@@ -1980,9 +2044,10 @@ function renderStoryContest(room) {
   doneBtn.addEventListener('click', () => scSubmitStory(room));
   content.appendChild(doneBtn);
 
-  // Therapist-only controls: count for next round + add card to current round
+  // Therapist-only: add card to current round
   if (myRole === 'therapist') {
-    const bar = buildCountBar(room.cardsPerRound || 5, [3,4,5,6,7,8], 'קלפים בסך הכל לשניכם (לתחרות הבאה):');
+    const bar = document.createElement('div');
+    bar.className = 'story-therapist-bar';
     const addBtn = document.createElement('button');
     addBtn.className = 'btn btn-ghost btn-small';
     addBtn.textContent = '+ הוסף קלף';
@@ -2048,26 +2113,40 @@ function renderStoryContestReveal(room, container) {
   container.appendChild(colsWrap);
 
   if (myRole === 'therapist') {
-    const countBar = buildCountBar(currentRoom.cardsPerRound || 5, [3,4,5,6,7,8], 'קלפים בסך הכל לשניכם (לתחרות הבאה):');
-    container.appendChild(countBar);
-    const btnRow = document.createElement('div');
-    btnRow.className = 'story-end-btns';
-    const newBtn = document.createElement('button');
-    newBtn.className = 'btn btn-primary';
-    newBtn.textContent = '← תחרות חדשה';
-    newBtn.addEventListener('click', () => writeNewStoryContestGame(currentRoom));
-    const otherBtn = document.createElement('button');
-    otherBtn.className = 'btn btn-secondary';
-    otherBtn.textContent = 'משחק אחר';
-    otherBtn.addEventListener('click', () => backToLobby());
-    const endBtn = document.createElement('button');
-    endBtn.className = 'btn btn-ghost btn-small';
-    endBtn.textContent = 'סיום שיחה';
-    endBtn.addEventListener('click', () => { clearSession(); location.reload(); });
-    btnRow.appendChild(newBtn);
-    btnRow.appendChild(otherBtn);
-    btnRow.appendChild(endBtn);
-    container.appendChild(btnRow);
+    if (storyPickerPending === 'contest') {
+      const wrap = document.createElement('div');
+      wrap.className = 'story-picker-wrap';
+      const countBar = buildCountBar(currentRoom.cardsPerRound || 5, [3,4,5,6,7,8,9,10], 'קלפים בסך הכל לשניכם:');
+      wrap.appendChild(countBar);
+      const startBtn = document.createElement('button');
+      startBtn.className = 'btn btn-primary';
+      startBtn.textContent = 'התחל תחרות ◀';
+      startBtn.addEventListener('click', () => {
+        storyPickerPending = null;
+        writeNewStoryContestGame(currentRoom);
+      });
+      wrap.appendChild(startBtn);
+      container.appendChild(wrap);
+    } else {
+      const btnRow = document.createElement('div');
+      btnRow.className = 'story-end-btns';
+      const newBtn = document.createElement('button');
+      newBtn.className = 'btn btn-primary';
+      newBtn.textContent = '← תחרות חדשה';
+      newBtn.addEventListener('click', () => { storyPickerPending = 'contest'; render(currentRoom); });
+      const otherBtn = document.createElement('button');
+      otherBtn.className = 'btn btn-secondary';
+      otherBtn.textContent = 'משחק אחר';
+      otherBtn.addEventListener('click', () => backToLobby());
+      const endBtn = document.createElement('button');
+      endBtn.className = 'btn btn-ghost btn-small';
+      endBtn.textContent = 'סיום שיחה';
+      endBtn.addEventListener('click', () => { clearSession(); location.reload(); });
+      btnRow.appendChild(newBtn);
+      btnRow.appendChild(otherBtn);
+      btnRow.appendChild(endBtn);
+      container.appendChild(btnRow);
+    }
   }
 }
 
@@ -2075,6 +2154,7 @@ function renderStoryContestReveal(room, container) {
 
 function renderFreePlay(room) {
   showScreen('screen-free-play');
+  document.getElementById('btn-fp-back').classList.toggle('hidden', !(myRole === 'therapist' || room.localPlay));
 
   // Header
   document.getElementById('fp-name-therapist').textContent  = room.therapistName || 'מנהל.ת';
