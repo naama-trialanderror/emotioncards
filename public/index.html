@@ -52,11 +52,28 @@
 
       <div class="landing-form-wrap">
         <h2 class="landing-form-title">התחלת משחק חדש</h2>
-        <input type="text" id="therapist-name" class="input" placeholder="מנהל.ת משחק"
+        <input type="text" id="therapist-name" class="input" placeholder="השם שלך"
                maxlength="20" autocomplete="off">
         <p id="error-manager" class="input-error hidden">נא להזין שם</p>
+
+        <div class="play-mode-selector">
+          <button class="play-mode-opt active" data-mode="two-screens">
+            <span class="play-mode-icon">📱📱</span>
+            <span>שני מסכים</span>
+          </button>
+          <button class="play-mode-opt" data-mode="one-screen">
+            <span class="play-mode-icon">📱</span>
+            <span>מסך אחד</span>
+          </button>
+        </div>
+
+        <div id="local-child-name-wrap" class="hidden">
+          <input type="text" id="local-child-name" class="input" placeholder="שם השחקנ.ית"
+                 maxlength="20" autocomplete="off">
+        </div>
+
         <button id="btn-go-settings" class="btn btn-primary btn-lg">הגדרות ויצירה ◀</button>
-        <p class="landing-flow-hint">לאחר ההגדרות יופיע לינק לשיתוף — השחקנ.ית תיכנס דרכו ישירות לחדר</p>
+        <p class="landing-flow-hint" id="landing-flow-hint">לאחר ההגדרות יופיע לינק לשיתוף — השחקנ.ית תיכנס דרכו ישירות לחדר</p>
       </div>
     </div>
 
@@ -502,6 +519,16 @@
     </div>
   </div>
 
-  <script type="module" src="game.js?v=21"></script>
+  <!-- Pass-screen overlay (local play) -->
+  <div id="local-pass-overlay" class="local-pass-overlay hidden">
+    <div class="local-pass-box">
+      <div class="local-pass-icon">🔄</div>
+      <h2 class="local-pass-name" id="local-pass-name">תורו של...</h2>
+      <p class="local-pass-hint">העבר את המסך</p>
+      <button id="local-pass-btn" class="btn btn-primary btn-lg">אני מוכן.ה ◀</button>
+    </div>
+  </div>
+
+  <script type="module" src="game.js?v=22"></script>
 </body>
 </html>

@@ -118,6 +118,23 @@ let ssSelectedCardId = null;  // shared story: locally selected card
 let scMyOrder = [];           // story contest: local card order
 let scMySentences = {};       // story contest: local sentences
 
+// ── Local-play state ──────────────────────────────────
+let selectedPlayMode = 'two-screens'; // 'two-screens' | 'one-screen'
+let localChildNameVal = '';
+let localCurrentRole  = 'therapist';   // 'therapist' | 'child'
+let prevActivePlayerLocal = null;       // detect activePlayer changes
+let localPassVisible  = false;          // is the pass-screen showing?
+// Role-keyed story-contest arrays (so each player has their own local state)
+let scTherapistOrder = [];
+let scTherapistSentences = {};
+let scChildOrder = [];
+let scChildSentences = {};
+
+/** Returns the effective role for display in local-play mode. */
+function effectiveRole(room) {
+  return room.localPlay ? localCurrentRole : myRole;
+}
+
 // ── Helpers ───────────────────────────────────────────
 
 function shuffle(arr) {
@@ -390,9 +407,26 @@ document.getElementById('btn-dismiss-reconnect').addEventListener('click', () =>
 // LANDING
 // ══════════════════════════════════════════════════════
 
+// Play-mode selector (one-screen / two-screens)
+document.querySelectorAll('.play-mode-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.play-mode-opt').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPlayMode = btn.dataset.mode;
+    const isLocal = selectedPlayMode === 'one-screen';
+    document.getElementById('local-child-name-wrap').classList.toggle('hidden', !isLocal);
+    document.getElementById('landing-flow-hint').classList.toggle('hidden', isLocal);
+  });
+});
+
 document.getElementById('btn-go-settings').addEventListener('click', () => {
   if (!document.getElementById('therapist-name').value.trim()) {
     return showInlineError('error-manager', 'נא להזין שם');
+  }
+  if (selectedPlayMode === 'one-screen') {
+    const childName = document.getElementById('local-child-name').value.trim();
+    if (!childName) return showInlineError('error-manager', 'נא להזין שם לשחקנ.ית');
+    localChildNameVal = childName;
   }
   renderPromptsScreen();
   showScreen('screen-settings');
@@ -452,10 +486,12 @@ document.getElementById('btn-create').addEventListener('click', async () => {
   myRole   = 'therapist';
 
   try {
+    const isLocal = selectedPlayMode === 'one-screen';
     await set(ref(db, `rooms/${code}`), {
       therapistName:   name,
-      childName:       null,
-      childConnected:  false,
+      childName:       isLocal ? localChildNameVal : null,
+      childConnected:  isLocal,
+      localPlay:       isLocal || null,
       phase:           'lobby',
       activePlayer:    'therapist',
       round:           0,
@@ -550,6 +586,12 @@ document.getElementById('btn-copy-link').addEventListener('click', () => {
   const btn = document.getElementById('btn-copy-link');
   btn.textContent = '✅ הועתק';
   setTimeout(() => btn.textContent = '🔗 העתק לינק', 1500);
+});
+
+document.getElementById('local-pass-btn').addEventListener('click', () => {
+  localPassVisible = false;
+  document.getElementById('local-pass-overlay').classList.add('hidden');
+  render(currentRoom);
 });
 
 let _promptCounter = 48;
@@ -754,9 +796,35 @@ function render(room) {
     ssSelectedCardId = null;
     scMyOrder = [];
     scMySentences = {};
+    scTherapistOrder = [];
+    scTherapistSentences = {};
+    scChildOrder = [];
+    scChildSentences = {};
     prevPhase = room.phase;
+    prevActivePlayerLocal = null;
+    localPassVisible = false;
   }
   document.getElementById('btn-next-round-top').classList.add('hidden');
+
+  // Local play: show pass-screen when active player changes
+  if (room.localPlay && room.phase !== 'lobby' && room.phase !== 'story-contest') {
+    if (localPassVisible) return; // don't render game while overlay is up
+    const curActive = room.activePlayer;
+    if (curActive && prevActivePlayerLocal !== null && curActive !== prevActivePlayerLocal) {
+      localCurrentRole = curActive;
+      prevActivePlayerLocal = curActive;
+      ssSelectedCardId = null;
+      const name = curActive === 'therapist' ? room.therapistName : room.childName;
+      document.getElementById('local-pass-name').textContent = `תורו של ${name}`;
+      document.getElementById('local-pass-overlay').classList.remove('hidden');
+      localPassVisible = true;
+      return;
+    }
+    if (prevActivePlayerLocal === null) {
+      prevActivePlayerLocal = curActive;
+      localCurrentRole = curActive || 'therapist';
+    }
+  }
 
   // In solo mode therapist acts for both sides.
   // During guessing, the guesser is the non-active player (!isActive),
@@ -784,33 +852,47 @@ function render(room) {
 
 function renderLobby(room) {
   showScreen('screen-lobby');
+
+  // Reset local-play pass state on every lobby render
+  if (room.localPlay) {
+    localCurrentRole = 'therapist';
+    prevActivePlayerLocal = null;
+    localPassVisible = false;
+    document.getElementById('local-pass-overlay').classList.add('hidden');
+  }
+
   if (myRole === 'therapist') {
     document.getElementById('therapist-lobby-controls').classList.remove('hidden');
-    document.getElementById('lobby-instructions').classList.remove('hidden');
-    document.getElementById('lobby-link-display').textContent =
-      `${location.origin}/?join=${roomCode}`;
 
-    // Count picker — shown for story modes so therapist can set it before starting
+    // Count picker for story modes
     const pickerEl = document.getElementById('lobby-count-picker');
     pickerEl.innerHTML = '';
     if (room.gameMode === 'shared-story') {
-      pickerEl.appendChild(
-        buildCountBar(room.cardsPerRound || 3, [2,3,4,5,6,7], 'קלפים לכל שחקן:')
-      );
+      pickerEl.appendChild(buildCountBar(room.cardsPerRound || 3, [2,3,4,5,6,7], 'קלפים לכל שחקן:'));
     } else if (room.gameMode === 'story-contest') {
-      pickerEl.appendChild(
-        buildCountBar(room.cardsPerRound || 5, [3,4,5,6,7,8], 'קלפים בסך הכל (לשניכם):')
-      );
+      pickerEl.appendChild(buildCountBar(room.cardsPerRound || 5, [3,4,5,6,7,8], 'קלפים בסך הכל (לשניכם):'));
     }
 
-    if (room.childConnected) {
-      document.getElementById('lobby-status-text').textContent = `${room.childName} כאן! 🎉`;
+    if (room.localPlay) {
+      // Local play: skip sharing instructions, both players are here
+      document.getElementById('lobby-instructions').classList.add('hidden');
+      document.getElementById('lobby-status-text').textContent =
+        `${room.therapistName} ↔ ${room.childName} — מוכנים! 🎉`;
       document.getElementById('lobby-spinner').classList.add('hidden');
       document.getElementById('btn-start').classList.remove('hidden');
     } else {
-      document.getElementById('lobby-status-text').textContent = 'ממתינים לשחקנ.ית...';
-      document.getElementById('lobby-spinner').classList.remove('hidden');
-      document.getElementById('btn-start').classList.add('hidden');
+      document.getElementById('lobby-instructions').classList.remove('hidden');
+      document.getElementById('lobby-link-display').textContent =
+        `${location.origin}/?join=${roomCode}`;
+      if (room.childConnected) {
+        document.getElementById('lobby-status-text').textContent = `${room.childName} כאן! 🎉`;
+        document.getElementById('lobby-spinner').classList.add('hidden');
+        document.getElementById('btn-start').classList.remove('hidden');
+      } else {
+        document.getElementById('lobby-status-text').textContent = 'ממתינים לשחקנ.ית...';
+        document.getElementById('lobby-spinner').classList.remove('hidden');
+        document.getElementById('btn-start').classList.add('hidden');
+      }
     }
   } else {
     document.getElementById('lobby-instructions').classList.add('hidden');
@@ -1549,7 +1631,8 @@ function renderSharedStory(room) {
   const storyLine = toStoryLine(room.storyLine);
   const maxTurns = room.maxTurns || 6;
   const isDone = storyLine.length >= maxTurns;
-  const isActive = myRole === room.activePlayer;
+  const eRole = effectiveRole(room);
+  const isActive = eRole === room.activePlayer;
 
   // Render story so far
   const storyEl = document.getElementById('ss-story-area');
@@ -1616,7 +1699,7 @@ function renderSharedStory(room) {
   }
 
   if (isActive) {
-    const myHandKey = myRole === 'therapist' ? 'therapistHand' : 'childHand';
+    const myHandKey = eRole === 'therapist' ? 'therapistHand' : 'childHand';
     const myHand = toHandCards(room[myHandKey]);
 
     const turnMsg = document.createElement('div');
@@ -1701,16 +1784,17 @@ async function ssSubmitCard(room, storyLine) {
     sentenceEl?.focus();
     return;
   }
-  const myHandKey = myRole === 'therapist' ? 'therapistHand' : 'childHand';
-  const myCountKey = myRole === 'therapist' ? 'therapistHandCount' : 'childHandCount';
+  const eRole = effectiveRole(room);
+  const myHandKey  = eRole === 'therapist' ? 'therapistHand' : 'childHand';
+  const myCountKey = eRole === 'therapist' ? 'therapistHandCount' : 'childHandCount';
   const myHand = toHandCards(room[myHandKey]).filter(id => id !== ssSelectedCardId);
-  const myName = myRole === 'therapist' ? room.therapistName : room.childName;
+  const myName = eRole === 'therapist' ? room.therapistName : room.childName;
   const nextPlayer = room.activePlayer === 'therapist' ? 'child' : 'therapist';
   const newIndex = storyLine.length;
   const cardId = ssSelectedCardId;
   ssSelectedCardId = null;
   await update(ref(db, `rooms/${roomCode}`), {
-    [`storyLine/${newIndex}`]: { cardId, authorRole: myRole, authorName: myName, sentence },
+    [`storyLine/${newIndex}`]: { cardId, authorRole: eRole, authorName: myName, sentence },
     [myHandKey]: myHand,
     [myCountKey]: myHand.length,
     activePlayer: nextPlayer,
@@ -1744,10 +1828,11 @@ async function writeNewStoryContestGame(room) {
 function renderStoryContest(room) {
   showScreen('screen-story-contest');
   const cards = toCards(room.cards);
-  const myDoneKey = myRole === 'therapist' ? 'therapistDone' : 'childDone';
-  const otherDoneKey = myRole === 'therapist' ? 'childDone' : 'therapistDone';
-  const otherName = myRole === 'therapist' ? room.childName : room.therapistName;
-  const myDone = room[myDoneKey];
+  const eRole = effectiveRole(room);
+  const myDoneKey    = eRole === 'therapist' ? 'therapistDone' : 'childDone';
+  const otherDoneKey = eRole === 'therapist' ? 'childDone' : 'therapistDone';
+  const otherName    = eRole === 'therapist' ? room.childName : room.therapistName;
+  const myDone  = room[myDoneKey];
   const otherDone = room[otherDoneKey];
   const bothDone = room.therapistDone && room.childDone;
 
@@ -1765,15 +1850,50 @@ function renderStoryContest(room) {
   }
 
   if (myDone) {
-    const waitDiv = document.createElement('div');
-    waitDiv.className = 'sc-waiting';
-    waitDiv.innerHTML = `<div class="spinner small"></div><span>ממתינים ל${otherName} לסיים...</span>`;
-    content.appendChild(waitDiv);
+    // Local play: show a "pass to other player" prompt instead of spinner
+    if (room.localPlay && eRole === 'therapist' && !otherDone) {
+      const passDiv = document.createElement('div');
+      passDiv.className = 'sc-local-pass';
+      const passMsg = document.createElement('p');
+      passMsg.className = 'sc-local-pass-msg';
+      passMsg.textContent = `סיימת! עכשיו תורו של ${room.childName}`;
+      const passBtn = document.createElement('button');
+      passBtn.className = 'btn btn-primary sc-done-btn';
+      passBtn.textContent = `התחל תורו של ${room.childName} ◀`;
+      passBtn.addEventListener('click', () => {
+        localCurrentRole = 'child';
+        render(currentRoom);
+      });
+      passDiv.appendChild(passMsg);
+      passDiv.appendChild(passBtn);
+      content.appendChild(passDiv);
+    } else {
+      const waitDiv = document.createElement('div');
+      waitDiv.className = 'sc-waiting';
+      waitDiv.innerHTML = `<div class="spinner small"></div><span>ממתינים ל${otherName} לסיים...</span>`;
+      content.appendChild(waitDiv);
+    }
     return;
   }
 
-  // Available cards (not yet in scMyOrder)
-  const available = cards.filter(id => !scMyOrder.includes(id));
+  // Local-play aware order/sentences — each role has its own local state
+  const myOrder     = room.localPlay ? (eRole === 'therapist' ? scTherapistOrder     : scChildOrder)     : scMyOrder;
+  const mySentences = room.localPlay ? (eRole === 'therapist' ? scTherapistSentences : scChildSentences) : scMySentences;
+  const setOrder = (val) => {
+    if (room.localPlay) { if (eRole === 'therapist') scTherapistOrder = val; else scChildOrder = val; }
+    else scMyOrder = val;
+  };
+  const setSentence = (id, val) => {
+    if (room.localPlay) { if (eRole === 'therapist') scTherapistSentences[id] = val; else scChildSentences[id] = val; }
+    else scMySentences[id] = val;
+  };
+  const delSentence = (id) => {
+    if (room.localPlay) { if (eRole === 'therapist') delete scTherapistSentences[id]; else delete scChildSentences[id]; }
+    else delete scMySentences[id];
+  };
+
+  // Available cards (not yet ordered)
+  const available = cards.filter(id => !myOrder.includes(id));
 
   const availHeader = document.createElement('p');
   availHeader.className = 'sc-section-title';
@@ -1791,7 +1911,7 @@ function renderStoryContest(room) {
       const card = buildCard(cardId);
       card.classList.add('selectable');
       card.addEventListener('click', () => {
-        scMyOrder = [...scMyOrder, cardId];
+        setOrder([...myOrder, cardId]);
         renderStoryContest(room);
       });
       const zoomBtn = document.createElement('button');
@@ -1805,13 +1925,13 @@ function renderStoryContest(room) {
     content.appendChild(availRow);
   }
 
-  if (scMyOrder.length > 0) {
+  if (myOrder.length > 0) {
     const storyHeader = document.createElement('p');
     storyHeader.className = 'sc-section-title';
     storyHeader.textContent = 'הסיפור שלך';
     content.appendChild(storyHeader);
 
-    scMyOrder.forEach((cardId, idx) => {
+    myOrder.forEach((cardId, idx) => {
       const row = document.createElement('div');
       row.className = 'sc-story-row';
 
@@ -1830,8 +1950,8 @@ function renderStoryContest(room) {
       removeBtn.textContent = '✕';
       removeBtn.title = 'הסרה מהסיפור';
       removeBtn.addEventListener('click', () => {
-        scMyOrder = scMyOrder.filter(id => id !== cardId);
-        delete scMySentences[cardId];
+        setOrder(myOrder.filter(id => id !== cardId));
+        delSentence(cardId);
         renderStoryContest(room);
       });
 
@@ -1840,10 +1960,8 @@ function renderStoryContest(room) {
       textarea.placeholder = 'כתוב.י משפט...';
       textarea.maxLength = 150;
       textarea.rows = 2;
-      textarea.value = scMySentences[cardId] || '';
-      textarea.addEventListener('input', () => {
-        scMySentences[cardId] = textarea.value;
-      });
+      textarea.value = mySentences[cardId] || '';
+      textarea.addEventListener('input', () => setSentence(cardId, textarea.value));
 
       row.appendChild(numEl);
       row.appendChild(cardImg);
@@ -1853,8 +1971,8 @@ function renderStoryContest(room) {
     });
   }
 
-  const allPlaced = scMyOrder.length === cards.length;
-  const allFilled = allPlaced && scMyOrder.every(id => (scMySentences[id] || '').trim());
+  const allPlaced = myOrder.length === cards.length;
+  const allFilled = allPlaced && myOrder.every(id => (mySentences[id] || '').trim());
   const doneBtn = document.createElement('button');
   doneBtn.className = 'btn btn-primary sc-done-btn';
   doneBtn.textContent = 'סיימתי ✓';
@@ -1875,12 +1993,15 @@ function renderStoryContest(room) {
 }
 
 async function scSubmitStory(room) {
-  const myOrderKey = myRole === 'therapist' ? 'therapistOrder' : 'childOrder';
-  const mySentencesKey = myRole === 'therapist' ? 'therapistSentences' : 'childSentences';
-  const myDoneKey = myRole === 'therapist' ? 'therapistDone' : 'childDone';
+  const eRole = effectiveRole(room);
+  const myOrderKey     = eRole === 'therapist' ? 'therapistOrder'    : 'childOrder';
+  const mySentencesKey = eRole === 'therapist' ? 'therapistSentences': 'childSentences';
+  const myDoneKey      = eRole === 'therapist' ? 'therapistDone'     : 'childDone';
+  const ord  = room.localPlay ? (eRole === 'therapist' ? scTherapistOrder     : scChildOrder)     : scMyOrder;
+  const sent = room.localPlay ? (eRole === 'therapist' ? scTherapistSentences : scChildSentences) : scMySentences;
   await update(ref(db, `rooms/${roomCode}`), {
-    [myOrderKey]: scMyOrder,
-    [mySentencesKey]: scMySentences,
+    [myOrderKey]: ord,
+    [mySentencesKey]: sent,
     [myDoneKey]: true,
   });
 }
