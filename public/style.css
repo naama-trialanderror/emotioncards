@@ -2320,7 +2320,7 @@ input, textarea { font-family: var(--font); direction: rtl; }
   flex-wrap: wrap;
 }
 .ss-hand-row .card {
-  width: 100px;
+  width: 140px;
   flex-shrink: 0;
 }
 .ss-hand-row .card.selected {
@@ -2364,6 +2364,13 @@ input, textarea { font-family: var(--font); direction: rtl; }
   font-weight: 700;
   color: var(--success);
   padding: 10px 0;
+}
+.story-end-btns {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -2413,13 +2420,29 @@ input, textarea { font-family: var(--font); direction: rtl; }
   gap: 10px;
   flex-wrap: wrap;
 }
+.sc-card-wrap-avail {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.sc-card-zoom {
+  font-size: 13px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dim);
+  padding: 0;
+  line-height: 1;
+}
+.sc-card-zoom:hover { color: var(--accent); }
 .sc-available-row .card {
-  width: 90px;
+  width: 120px;
   flex-shrink: 0;
 }
 .sc-story-row {
   display: grid;
-  grid-template-columns: 24px 72px 28px 1fr;
+  grid-template-columns: 24px 88px 28px 1fr;
   gap: 8px;
   align-items: start;
   background: var(--bg);
@@ -2435,10 +2458,11 @@ input, textarea { font-family: var(--font); direction: rtl; }
   text-align: center;
 }
 .sc-story-card-img {
-  width: 72px;
+  width: 88px;
   height: auto;
   border-radius: var(--r-sm);
   object-fit: cover;
+  cursor: zoom-in;
 }
 .sc-remove-btn {
   background: none;
@@ -2526,4 +2550,7 @@ input, textarea { font-family: var(--font); direction: rtl; }
 .sc-end-btn {
   align-self: center;
   margin-top: 16px;
+}
+.sc-reveal-card-img {
+  cursor: zoom-in;
 }

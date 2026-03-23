@@ -415,7 +415,7 @@ document.querySelectorAll('.mode-card[data-mode]').forEach(card => {
     document.getElementById('choice-toggle-section').classList.toggle('hidden', selectedMode !== 'fixed');
     const noPrompts = ['cards-only', 'free-play', 'shared-story', 'story-contest'].includes(selectedMode);
     document.getElementById('prompts-section').style.display = noPrompts ? 'none' : '';
-    const hideAdvanced = ['free-play', 'shared-story', 'story-contest'].includes(selectedMode);
+    const hideAdvanced = selectedMode === 'free-play';
     document.getElementById('advanced-settings-panel').classList.toggle('hidden-by-mode', hideAdvanced);
     document.getElementById('btn-advanced-toggle').classList.toggle('hidden-by-mode', hideAdvanced);
   });
@@ -1116,15 +1116,6 @@ function buildCard(cardId) {
   num.textContent = cardId;
   div.appendChild(num);
 
-  // Hide-card button — manager only, shown on hover, hides card from future rounds
-  if (myRole === 'therapist') {
-    const hideBtn = document.createElement('button');
-    hideBtn.className = 'card-hide-btn';
-    hideBtn.title = 'הסתרה מהגרלות עתידיות';
-    hideBtn.textContent = '🚫';
-    hideBtn.addEventListener('click', e => { e.stopPropagation(); toggleHideCard(cardId); });
-    div.appendChild(hideBtn);
-  }
 
   return div;
 }
@@ -1437,6 +1428,19 @@ async function writeNewFreePlayGame() {
   });
 }
 
+// ── Shared helpers (story modes) ─────────────────────
+
+async function backToLobby() {
+  if (!roomCode) return;
+  await update(ref(db, `rooms/${roomCode}`), { phase: 'lobby' });
+}
+
+function showZoomModal(cardId) {
+  const src = `/cards/card_${String(cardId).padStart(2, '0')}.png`;
+  document.getElementById('browser-zoom-img').src = src;
+  document.getElementById('browser-zoom-modal').classList.remove('hidden');
+}
+
 // ── Start shared-story ────────────────────────────────
 
 async function writeNewSharedStoryGame(room) {
@@ -1512,11 +1516,24 @@ function renderSharedStory(room) {
     doneMsg.textContent = '🎉 הסיפור הושלם!';
     actionEl.appendChild(doneMsg);
     if (myRole === 'therapist') {
+      const btnRow = document.createElement('div');
+      btnRow.className = 'story-end-btns';
+      const newBtn = document.createElement('button');
+      newBtn.className = 'btn btn-primary';
+      newBtn.textContent = '← סיפור חדש';
+      newBtn.addEventListener('click', () => writeNewSharedStoryGame(currentRoom));
+      const otherBtn = document.createElement('button');
+      otherBtn.className = 'btn btn-secondary';
+      otherBtn.textContent = 'משחק אחר';
+      otherBtn.addEventListener('click', () => backToLobby());
       const endBtn = document.createElement('button');
-      endBtn.className = 'btn btn-primary';
-      endBtn.textContent = 'סיום משחק';
+      endBtn.className = 'btn btn-ghost btn-small';
+      endBtn.textContent = 'סיום שיחה';
       endBtn.addEventListener('click', () => { clearSession(); location.reload(); });
-      actionEl.appendChild(endBtn);
+      btnRow.appendChild(newBtn);
+      btnRow.appendChild(otherBtn);
+      btnRow.appendChild(endBtn);
+      actionEl.appendChild(btnRow);
     }
     return;
   }
@@ -1680,13 +1697,21 @@ function renderStoryContest(room) {
     const availRow = document.createElement('div');
     availRow.className = 'sc-available-row';
     available.forEach(cardId => {
+      const wrap = document.createElement('div');
+      wrap.className = 'sc-card-wrap-avail';
       const card = buildCard(cardId);
       card.classList.add('selectable');
       card.addEventListener('click', () => {
         scMyOrder = [...scMyOrder, cardId];
         renderStoryContest(room);
       });
-      availRow.appendChild(card);
+      const zoomBtn = document.createElement('button');
+      zoomBtn.className = 'sc-card-zoom';
+      zoomBtn.textContent = '🔍';
+      zoomBtn.addEventListener('click', e => { e.stopPropagation(); showZoomModal(cardId); });
+      wrap.appendChild(card);
+      wrap.appendChild(zoomBtn);
+      availRow.appendChild(wrap);
     });
     content.appendChild(availRow);
   }
@@ -1708,6 +1733,8 @@ function renderStoryContest(room) {
       const cardImg = document.createElement('img');
       cardImg.src = `/cards/card_${String(cardId).padStart(2, '0')}.png`;
       cardImg.className = 'sc-story-card-img';
+      cardImg.style.cursor = 'zoom-in';
+      cardImg.addEventListener('click', () => showZoomModal(cardId));
 
       const removeBtn = document.createElement('button');
       removeBtn.className = 'sc-remove-btn';
@@ -1785,6 +1812,7 @@ function renderStoryContestReveal(room, container) {
       const img = document.createElement('img');
       img.src = `/cards/card_${String(cardId).padStart(2, '0')}.png`;
       img.className = 'sc-reveal-card-img';
+      img.addEventListener('click', () => showZoomModal(cardId));
       const text = document.createElement('div');
       text.className = 'sc-reveal-text';
       text.textContent = `${idx + 1}. ${sentences[cardId] || ''}`;
@@ -1799,11 +1827,24 @@ function renderStoryContestReveal(room, container) {
   container.appendChild(colsWrap);
 
   if (myRole === 'therapist') {
+    const btnRow = document.createElement('div');
+    btnRow.className = 'story-end-btns';
+    const newBtn = document.createElement('button');
+    newBtn.className = 'btn btn-primary';
+    newBtn.textContent = '← תחרות חדשה';
+    newBtn.addEventListener('click', () => writeNewStoryContestGame(currentRoom));
+    const otherBtn = document.createElement('button');
+    otherBtn.className = 'btn btn-secondary';
+    otherBtn.textContent = 'משחק אחר';
+    otherBtn.addEventListener('click', () => backToLobby());
     const endBtn = document.createElement('button');
-    endBtn.className = 'btn btn-primary sc-end-btn';
-    endBtn.textContent = 'סיום משחק';
+    endBtn.className = 'btn btn-ghost btn-small';
+    endBtn.textContent = 'סיום שיחה';
     endBtn.addEventListener('click', () => { clearSession(); location.reload(); });
-    container.appendChild(endBtn);
+    btnRow.appendChild(newBtn);
+    btnRow.appendChild(otherBtn);
+    btnRow.appendChild(endBtn);
+    container.appendChild(btnRow);
   }
 }
 
