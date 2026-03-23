@@ -2437,23 +2437,33 @@ input, textarea { font-family: var(--font); direction: rtl; }
   flex-wrap: wrap;
 }
 .sc-card-wrap-avail {
+  position: relative;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
 }
 .sc-card-zoom {
-  font-size: 13px;
-  background: none;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.82);
   border: none;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  color: var(--text-dim);
-  padding: 0;
+  backdrop-filter: blur(4px);
+  z-index: 3;
+  transition: background var(--t), transform var(--t);
   line-height: 1;
 }
-.sc-card-zoom:hover { color: var(--accent); }
+.sc-card-zoom:hover { background: rgba(255,255,255,1); transform: scale(1.1); }
 .sc-available-row .card {
-  width: 145px;
+  width: 160px;
   flex-shrink: 0;
 }
 .sc-story-row {
