@@ -142,7 +142,7 @@ let _scSortable = null          // Sortable instance (destroy לפני כל rend
 1. **עברית RTL** — כל הטקסטים בעברית, כיוון RTL
 2. **UI קומפקטי** — לא לצופף כותרות, רכיבי UI דיסקרטיים
 3. **Touch-friendly** — כפתורי zoom תמיד גלויים (לא רק בhover)
-4. **Footer בכל המסכים** — `brand-footer` קיים גם במסכי משחק
+4. **Footer בכל המסכים** — `brand-footer` קיים גם במסכי משחק, `position: sticky; bottom: 0`, ממורכז. לוגו 62px, טקסט 15px, גלולות (סדנאות/הרצאות) 15px עם רקע לבן ובורדר
 5. **בקרות therapist** — מוסתרות מהילד/שחקן אלא אם הורשה
 6. **גדלי קלפים:**
    - קלפי יד בסיפור: `width: 165px` (ss-hand-row)
