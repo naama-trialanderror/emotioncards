@@ -27,6 +27,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
+// ── Analytics ─────────────────────────────────────────
+function logEvent(name, data = {}) {
+  const newRef = ref(db, `analytics/events/${Date.now()}_${Math.random().toString(36).slice(2, 6)}`);
+  set(newRef, { event: name, ts: Date.now(), ...data }).catch(() => {});
+}
+
 // ── Prompts ───────────────────────────────────────────
 
 const CATEGORIES = [
@@ -519,6 +525,7 @@ document.getElementById('btn-create').addEventListener('click', async () => {
     return showError('שגיאה בחיבור ל-Firebase: ' + e.message);
   }
 
+  logEvent('room_created', { gameMode: selectedMode === 'fixed' && selectedChoiceMode ? 'choice' : selectedMode, playMode: selectedPlayMode });
   saveManagerSettings();
   saveSession(code, 'therapist', name);
   document.getElementById('display-code').textContent = code;
@@ -543,6 +550,7 @@ document.getElementById('btn-join').addEventListener('click', async () => {
     myRole   = 'child';
 
     await update(ref(db, `rooms/${code}`), { childName: name, childConnected: true });
+    logEvent('player_joined', { roomCode: code });
     saveSession(code, 'child', name);
 
     showScreen('screen-lobby');
@@ -723,6 +731,7 @@ document.getElementById('btn-start').addEventListener('click', async () => {
   const snap = await get(ref(db, `rooms/${roomCode}`));
   const room = snap.val();
   if (!room.childConnected) return showError('ממתינים לשחקן השני.');
+  logEvent('game_started', { gameMode: room.gameMode, localPlay: !!room.localPlay });
   if (room.gameMode === 'free-play') {
     writeNewFreePlayGame();
   } else if (room.gameMode === 'shared-story') {
