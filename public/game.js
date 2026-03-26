@@ -11,7 +11,7 @@
    ══════════════════════════════════════════════════════ */
 
 import { initializeApp }            from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
-import { getDatabase, ref, set, update, onValue, get, off, remove }
+import { getDatabase, ref, set, update, onValue, get, off, remove, onDisconnect }
                                     from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js';
 
 const firebaseConfig = {
@@ -1581,7 +1581,11 @@ function goChooseGame() {
     const durationMin = Math.round((Date.now() - window._gameStartedAt) / 60000);
     logEvent('game_ended', { durationMin });
     window._gameStartedAt = null;
-    if (roomCode) setTimeout(() => remove(ref(db, `rooms/${roomCode}`)), 2 * 60 * 60 * 1000);
+    if (roomCode) {
+      onDisconnect(ref(db, `rooms/${roomCode}`)).remove();
+      window.addEventListener('beforeunload', () => remove(ref(db, `rooms/${roomCode}`)), { once: true });
+      setTimeout(() => remove(ref(db, `rooms/${roomCode}`)), 2 * 60 * 60 * 1000);
+    }
   }
   renderPromptsScreen();
   showScreen('screen-settings');
