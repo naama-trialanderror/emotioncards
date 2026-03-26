@@ -1667,6 +1667,15 @@ input, textarea { font-family: var(--font); direction: rtl; }
   background: var(--accent-light);
 }
 
+.brand-footer-privacy {
+  font-size: 10px;
+  opacity: 0.4;
+  text-align: center;
+  margin-top: 8px;
+  line-height: 1.6;
+  direction: rtl;
+}
+
 /* ── Fan scaling for wider screens ── */
 @media (min-width: 600px) {
   #landing-fan {

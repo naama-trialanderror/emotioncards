@@ -11,7 +11,7 @@
    ══════════════════════════════════════════════════════ */
 
 import { initializeApp }            from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
-import { getDatabase, ref, set, update, onValue, get, off }
+import { getDatabase, ref, set, update, onValue, get, off, remove }
                                     from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js';
 
 const firebaseConfig = {
@@ -562,6 +562,14 @@ document.getElementById('btn-join').addEventListener('click', async () => {
   }
 });
 
+// Footer click tracking
+document.addEventListener('click', e => {
+  const link = e.target.closest('.brand-footer-main, .brand-footer-pill');
+  if (!link) return;
+  const label = link.classList.contains('brand-footer-main') ? 'home' : link.textContent.trim();
+  logEvent('footer_click', { link: label });
+});
+
 // Enter key support
 ['therapist-name'].forEach(id =>
   document.getElementById(id).addEventListener('keydown', e => {
@@ -732,6 +740,7 @@ document.getElementById('btn-start').addEventListener('click', async () => {
   const room = snap.val();
   if (!room.childConnected) return showError('ממתינים לשחקן השני.');
   logEvent('game_started', { gameMode: room.gameMode, localPlay: !!room.localPlay });
+  window._gameStartedAt = Date.now();
   if (room.gameMode === 'free-play') {
     writeNewFreePlayGame();
   } else if (room.gameMode === 'shared-story') {
@@ -1263,6 +1272,7 @@ async function handleCardClick(cardId, room, isActive) {
       if (typedText !== undefined) update_data.promptText = typedText;
       document.getElementById('cards-only-text').value = '';
       await update(ref(db, `rooms/${roomCode}`), update_data);
+      if (typedText) logEvent('sentence_submitted', { gameMode: room.gameMode, role: myRole });
     } else {
       // First click — mark as pending
       pendingCard = cardId;
@@ -1567,6 +1577,12 @@ async function backToLobby() {
 }
 
 function goChooseGame() {
+  if (window._gameStartedAt) {
+    const durationMin = Math.round((Date.now() - window._gameStartedAt) / 60000);
+    logEvent('game_ended', { durationMin });
+    window._gameStartedAt = null;
+    if (roomCode) setTimeout(() => remove(ref(db, `rooms/${roomCode}`)), 2 * 60 * 60 * 1000);
+  }
   renderPromptsScreen();
   showScreen('screen-settings');
 }
@@ -1867,6 +1883,7 @@ async function ssSubmitCard(room, storyLine) {
     activePlayer: nextPlayer,
     round: room.round + 1,
   });
+  logEvent('sentence_submitted', { gameMode: 'shared-story', role: eRole });
 }
 
 // ── Start story-contest ───────────────────────────────
@@ -2131,6 +2148,8 @@ async function scSubmitStory(room) {
     [mySentencesKey]: sent,
     [myDoneKey]: true,
   });
+  const sentenceCount = Object.values(sent).filter(s => s).length;
+  logEvent('sentence_submitted', { gameMode: 'story-contest', role: eRole, sentenceCount });
 }
 
 function renderStoryContestReveal(room, container) {

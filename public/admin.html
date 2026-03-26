@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Emotion Cards</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Heebo', sans-serif; background: #f5f0eb; color: #2d2416; padding: 32px 24px; }
+    h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
+    .subtitle { color: #888; font-size: 0.9rem; margin-bottom: 32px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .card-label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .card-value { font-size: 2rem; font-weight: 700; color: #c0622a; }
+    .card-sub { font-size: 0.8rem; color: #aaa; margin-top: 4px; }
+    h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    th { background: #f5f0eb; text-align: left; padding: 10px 16px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .05em; color: #888; }
+    td { padding: 10px 16px; border-top: 1px solid #f0ebe4; font-size: 0.9rem; }
+    tr:last-child td { border-bottom: none; }
+    .loading { color: #aaa; font-style: italic; }
+    .section { margin-bottom: 28px; }
+    .refresh { background: #c0622a; color: white; border: none; border-radius: 8px; padding: 8px 18px; font-family: inherit; font-size: 0.9rem; cursor: pointer; margin-bottom: 24px; }
+    .refresh:hover { background: #a8501f; }
+  </style>
+</head>
+<body>
+  <h1>Emotion Cards — Analytics</h1>
+  <p class="subtitle" id="last-updated">Loading...</p>
+  <button class="refresh" onclick="load()">Refresh</button>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-label">Rooms created</div>
+      <div class="card-value" id="stat-rooms">—</div>
+      <div class="card-sub">all time</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Rooms this week</div>
+      <div class="card-value" id="stat-rooms-week">—</div>
+      <div class="card-sub">last 7 days</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Games started</div>
+      <div class="card-value" id="stat-started">—</div>
+      <div class="card-sub">all time</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Avg game duration</div>
+      <div class="card-value" id="stat-duration">—</div>
+      <div class="card-sub">minutes</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Footer clicks</div>
+      <div class="card-value" id="stat-footer">—</div>
+      <div class="card-sub">all time</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Players joined</div>
+      <div class="card-value" id="stat-joined">—</div>
+      <div class="card-sub">all time</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Game mode breakdown</h2>
+    <table id="table-modes"><tr><td class="loading">Loading...</td></tr></table>
+  </div>
+
+  <div class="section">
+    <h2>Footer link clicks</h2>
+    <table id="table-footer"><tr><td class="loading">Loading...</td></tr></table>
+  </div>
+
+  <div class="section">
+    <h2>Sentences submitted</h2>
+    <table id="table-sentences">
+      <thead><tr><th>Mode</th><th>Role</th><th>Count</th><th>Time</th></tr></thead>
+      <tbody id="tbody-sentences"><tr><td class="loading" colspan="4">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Recent events (last 20)</h2>
+    <table id="table-recent">
+      <thead><tr><th>Event</th><th>Details</th><th>Time</th></tr></thead>
+      <tbody id="tbody-recent"><tr><td class="loading" colspan="3">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <script>
+    // To set a new password: open browser console on this page and run:
+    //   sha256('your-new-password').then(h => console.log(h))
+    // Then replace ADMIN_HASH below with the result.
+    const ADMIN_HASH = '94edf28c6d6da38fd35d7ad53e485307f89fbeaf120485c8d17a43f323deee71';
+
+    async function sha256(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    async function checkAuth() {
+      if (sessionStorage.getItem('adminAuth') === '1') return true;
+      const pw = prompt('Admin password:');
+      if (!pw) return false;
+      const hash = await sha256(pw);
+      if (hash === ADMIN_HASH) {
+        sessionStorage.setItem('adminAuth', '1');
+        return true;
+      }
+      document.body.innerHTML = '<p style="padding:40px;font-family:sans-serif;color:#c00">Wrong password.</p>';
+      return false;
+    }
+
+    window._adminReady = checkAuth();
+  </script>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
+    import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js';
+
+    if (!(await window._adminReady)) throw new Error('not authenticated');
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyBNoKFGa9Cacn5ZkslmPyALIpa5Rqvp79Q",
+      authDomain:        "emotioncards-41add.firebaseapp.com",
+      databaseURL:       "https://emotioncards-41add-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId:         "emotioncards-41add",
+      storageBucket:     "emotioncards-41add.firebasestorage.app",
+      messagingSenderId: "34612679289",
+      appId:             "1:34612679289:web:30dc920230887626bcbaa8",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    window.load = async function() {
+      document.getElementById('last-updated').textContent = 'Loading...';
+      const snap = await get(ref(db, 'analytics/events'));
+      const raw = snap.val() || {};
+      const events = Object.values(raw);
+
+      const now = Date.now();
+      const week = 7 * 24 * 60 * 60 * 1000;
+
+      const roomsCreated  = events.filter(e => e.event === 'room_created');
+      const gamesStarted  = events.filter(e => e.event === 'game_started');
+      const gamesEnded    = events.filter(e => e.event === 'game_ended');
+      const footerClicks  = events.filter(e => e.event === 'footer_click');
+      const playersJoined = events.filter(e => e.event === 'player_joined');
+
+      // Stats
+      document.getElementById('stat-rooms').textContent       = roomsCreated.length;
+      document.getElementById('stat-rooms-week').textContent  = roomsCreated.filter(e => now - e.ts < week).length;
+      document.getElementById('stat-started').textContent     = gamesStarted.length;
+      document.getElementById('stat-footer').textContent      = footerClicks.length;
+      document.getElementById('stat-joined').textContent      = playersJoined.length;
+
+      // Avg duration
+      const durations = gamesEnded.map(e => e.durationMin).filter(d => d != null && d >= 0 && d < 300);
+      const avgDur = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null;
+      document.getElementById('stat-duration').textContent = avgDur != null ? avgDur : '—';
+
+      // Game mode table
+      const modeCounts = {};
+      gamesStarted.forEach(e => { modeCounts[e.gameMode || 'unknown'] = (modeCounts[e.gameMode || 'unknown'] || 0) + 1; });
+      const modeTable = document.getElementById('table-modes');
+      if (Object.keys(modeCounts).length === 0) {
+        modeTable.innerHTML = '<tr><td>No data yet</td></tr>';
+      } else {
+        modeTable.innerHTML = '<thead><tr><th>Mode</th><th>Count</th></tr></thead><tbody>' +
+          Object.entries(modeCounts).sort((a,b) => b[1]-a[1]).map(([mode, count]) =>
+            `<tr><td>${mode}</td><td>${count}</td></tr>`).join('') + '</tbody>';
+      }
+
+      // Footer clicks table
+      const linkCounts = {};
+      footerClicks.forEach(e => { linkCounts[e.link || 'unknown'] = (linkCounts[e.link || 'unknown'] || 0) + 1; });
+      const footerTable = document.getElementById('table-footer');
+      if (Object.keys(linkCounts).length === 0) {
+        footerTable.innerHTML = '<tr><td>No data yet</td></tr>';
+      } else {
+        footerTable.innerHTML = '<thead><tr><th>Link</th><th>Clicks</th></tr></thead><tbody>' +
+          Object.entries(linkCounts).sort((a,b) => b[1]-a[1]).map(([link, count]) =>
+            `<tr><td>${link}</td><td>${count}</td></tr>`).join('') + '</tbody>';
+      }
+
+      // Sentences table
+      const sentenceEvents = events.filter(e => e.event === 'sentence_submitted')
+        .sort((a, b) => b.ts - a.ts).slice(0, 50);
+      const tbodySentences = document.getElementById('tbody-sentences');
+      tbodySentences.innerHTML = sentenceEvents.length === 0
+        ? '<tr><td colspan="4">No data yet</td></tr>'
+        : sentenceEvents.map(e => {
+            const count = e.sentenceCount != null ? e.sentenceCount : '1';
+            return `<tr><td>${e.gameMode || '—'}</td><td>${e.role || '—'}</td><td>${count}</td><td>${new Date(e.ts).toLocaleString('he-IL')}</td></tr>`;
+          }).join('');
+
+      // Recent events
+      const recent = events.sort((a, b) => b.ts - a.ts).slice(0, 20);
+      const tbody = document.getElementById('tbody-recent');
+      tbody.innerHTML = recent.map(e => {
+        const details = Object.entries(e).filter(([k]) => !['event','ts'].includes(k))
+          .map(([k,v]) => `${k}: ${v}`).join(', ');
+        const time = new Date(e.ts).toLocaleString('he-IL');
+        return `<tr><td>${e.event}</td><td>${details || '—'}</td><td>${time}</td></tr>`;
+      }).join('');
+
+      document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString('en-GB')}`;
+    };
+
+    load();
+  </script>
+</body>
+</html>
