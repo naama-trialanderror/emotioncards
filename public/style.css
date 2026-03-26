@@ -1668,13 +1668,21 @@ input, textarea { font-family: var(--font); direction: rtl; }
 }
 
 .brand-footer-privacy {
-  font-size: 10px;
-  opacity: 0.4;
-  text-align: center;
-  margin-top: 8px;
-  line-height: 1.6;
-  direction: rtl;
+  font-size: 13px;
+  font-weight: 400;
+  font-family: inherit;
+  color: var(--text-mid);
+  background: rgba(255,255,255,0.6);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-full);
+  padding: 5px 14px;
+  opacity: 0.45;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-right: 10px;
+  transition: opacity var(--t);
 }
+.brand-footer-privacy:hover { opacity: 0.8; }
 
 /* ── Fan scaling for wider screens ── */
 @media (min-width: 600px) {
